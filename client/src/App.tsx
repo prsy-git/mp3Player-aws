@@ -1,19 +1,19 @@
-import {useEffect, useState} from 'react';
+import StatusBadge from './components/StatusCheck';
+import SongList from './components/SongList';
 
 export default function App() {
-    const [message, setMessage] = useState<string>('Loading...');
-
-    useEffect(() => {
-        fetch('http://localhost:5000/api/ping')
-        .then((res) => res.json())
-        .then((data) => setMessage(data.message))
-        .catch(() => setMessage('Failed to connect backend.'));
-    }, [])
-    
     return (
-        <div>
-            <h1>MP3 App Frontend Test</h1>
-            <p>Client successfully running</p>
+        <>
+        <header>
+            <h1>Music App</h1>
+            <StatusBadge />
+        </header>
+
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+            <p>Test to display SongList component</p>
+            <SongList />
         </div>
-    );
+        
+        </>
+    )
 }
