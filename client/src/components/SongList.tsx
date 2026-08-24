@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 
-export default function SongList() {
+//define type/interface to allow import of prop
+interface SongListProps {
+    onSelectSong: (songName: string) => void;
+}
+
+export default function SongList({ onSelectSong }: SongListProps) {
     const [songs, setSongs] = useState<string[]>([]);
 
     useEffect(() => {
@@ -13,11 +18,17 @@ export default function SongList() {
             .catch((err) => console.error('Failed to load songs', err));
     }, []);
 
+
     return (
         <ul>
             {songs.map((songName, index) => (
-                <li key={index}>
-                    {index + 1}. {songName};
+                <li key={index} 
+                    style={{ cursor: 'pointer', padding: '8px', userSelect: 'none'}}
+                    onClick={() => {
+                        console.log(songName)
+                        onSelectSong(songName)
+                        }}>
+                    {index + 1}. {songName}
                 </li>
             ))}
         </ul>

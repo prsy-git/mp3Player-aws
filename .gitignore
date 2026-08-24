@@ -134,3 +134,7 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+#Do not add files put in uploads to the git storage
+**/uploads/*
+!**/uploads/.gitkeep

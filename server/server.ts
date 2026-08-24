@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
@@ -8,6 +9,21 @@ const PORT = 5000;
 
 app.use(cors());
 app.use(express.json());
+
+//multer file upload handling
+const fileStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/')
+    },
+
+    filename: (req, file, cb) => {
+        const originalName = file.originalname
+        const cleanedName = originalName.replaceAll(' ', '');
+        cb(null, cleanedName)
+    }
+})
+
+const upload = multer({ storage: fileStorage });
 
 //Serve audio files from uploads folder to client tier
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
@@ -37,6 +53,16 @@ app.get('/api/tracks', (req, res) => {
         
         res.json({ songs: songFiles });
     });
+});
+
+//POST for file uploads
+app.post('/api/upload', upload.single('file'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file passed.'})
+    }
+
+    console.log('File uploaded:', req.file.originalname);
+    res.status(200).json({ message: 'Success', filename: req.file.originalname });
 });
 
 app.listen(PORT, () => {
