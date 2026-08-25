@@ -1,3 +1,4 @@
+import './index.css';
 import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import SongList from './components/SongList';
@@ -24,10 +25,10 @@ export default function App() {
     }
 
     return (
-        <>
-        <Header></Header>
+        <main className="app-container">
+        
+            <Header/>
 
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
             <p>File upload form</p>
             <UploadForm onUploadSuccess={handleUploadSuccess} />
             
@@ -47,8 +48,7 @@ export default function App() {
             >
 
             </AudioPlayer>
-        </div>
         
-        </>
+        </main>
     )
 }
