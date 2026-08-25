@@ -56,3 +56,20 @@ li {
 li:hover {
     background-color: #e9ecef;
 }
+
+/*
+    SPECIALIZED RULES FOR SPECIFIC ELEMENTS
+*/
+
+/* Special rule for selected track text */
+.selected-track {
+    /*Ensure text fits in container*/
+    width: 100%;
+    max-width: 100%;
+    text-align: center;
+    
+    /*Add text wrapping defense*/
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
