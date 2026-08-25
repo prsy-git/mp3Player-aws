@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import StatusBadge from './components/StatusCheck';
+import Header from './components/Header';
 import SongList from './components/SongList';
 import UploadForm from './components/UploadForm';
+import AudioPlayer from './components/AudioPlayer';
 
 export default function App() {
     
+    //must be kept in app for currentSong access
     const [currentSong, setCurrentSong] = useState<string | null>(null)
     
     //State toggle for page refresh on new file upload
@@ -23,10 +25,7 @@ export default function App() {
 
     return (
         <>
-        <header>
-            <h1>Music App</h1>
-            <StatusBadge />
-        </header>
+        <Header></Header>
 
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
             <p>File upload form</p>
@@ -35,26 +34,19 @@ export default function App() {
             <p>Test to display SongList component</p>
             <SongList 
                 key={refreshFlag}
-                onSelectSong={(songName) => setCurrentSong(songName)}
+                onSelectSong={(songName) => {
+                    setCurrentSong(songName)
+                    setLoopFlag(false);    
+                }}
             />
-            
-            <p>Selected track: {currentSong ?? 'None'}</p>
-            {currentSong && (
-                <>    
-                    <audio 
-                        key={currentSong}
-                        loop = {loopFlag}
-                        controls
-                        autoPlay
-                        src={`http://localhost:5000/uploads/${encodeURIComponent(currentSong)}`}
-                    />
 
-                    <button type="button" onClick={toggleLoop}>
-                        Loop Current Song: {loopFlag ? 'ON' : 'OFF'} 
-                    </button>
-                </>
-            )}
+            <AudioPlayer
+                currentSong={currentSong}
+                loopFlag={loopFlag}
+                onToggleLoop={toggleLoop}
+            >
 
+            </AudioPlayer>
         </div>
         
         </>
