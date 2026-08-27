@@ -65,6 +65,22 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     res.status(200).json({ message: 'Success', filename: req.file.originalname });
 });
 
+//DELETE for song removal on delete button
+app.delete('api/tracks/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(__dirname, 'uploads', filename);
+
+    //Remove file at disk location
+    fs.unlink(filePath, (err) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Could not delete file. May not exist" });
+        }
+
+        res.status(200).json({ message: "File successfully removed from uploads." });
+    })
+})
+
 app.listen(PORT, () => {
     console.log(`Server listening on http://localhost:${PORT}`);
 })
