@@ -6,8 +6,16 @@ export interface Song {
 }
 
 //defines state for music player component
-export interface Player {
-    currentPlaying: Song | null;
-    isPlaying: boolean;
-    volume: number;
+export interface AudioPlayerProps {
+    currentSong: string | null;
+    loopFlag: boolean;
+    onToggleLoop: () => void;
+}
+
+//Playlist interface / data structure
+export interface Playlist {
+    id: string;
+    name: string;
+    isDefault?: boolean;
+    songs: Song[];
 }

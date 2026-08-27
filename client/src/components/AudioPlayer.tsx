@@ -1,10 +1,11 @@
+import { AudioPlayerProps } from '../types';
 import {useState, useEffect, useRef} from 'react';
 
-interface AudioPlayerProps {
-  currentSong: string | null;
-  loopFlag: boolean;
-  onToggleLoop: () => void;
-}
+// interface AudioPlayerProps {
+//   currentSong: string | null;
+//   loopFlag: boolean;
+//   onToggleLoop: () => void;
+// }
 
 export default function AudioPlayer({currentSong, loopFlag, onToggleLoop}: AudioPlayerProps) {
     //function to format time output on slider display
@@ -67,13 +68,13 @@ export default function AudioPlayer({currentSong, loopFlag, onToggleLoop}: Audio
 
     return (
         <div style={{ width: '100%', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <p className='selected-track'>Selected track: {currentSong ?? 'None'}</p>
+            <p className='selected-track'>Selected track: {currentSong?.title ?? 'None'}</p>
             {currentSong && (
                 <>    
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px'}}>   
                         <audio 
                             ref={audioReference}
-                            src={`http://localhost:5000/uploads/${encodeURIComponent(currentSong)}`}
+                            src={`http://localhost:5000/uploads/${encodeURIComponent(currentSong.title)}`}
                             onLoadedMetadata={(e) => {
                                 const audioDuration = e.currentTarget.duration;
                                 if (Number.isFinite(audioDuration)) {
