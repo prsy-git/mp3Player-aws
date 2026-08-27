@@ -7,6 +7,14 @@ interface AudioPlayerProps {
 }
 
 export default function AudioPlayer({currentSong, loopFlag, onToggleLoop}: AudioPlayerProps) {
+    //function to format time output on slider display
+    const formatTime = (timeInSeconds: number): string => {
+        if (!Number.isFinite(timeInSeconds) || timeInSeconds <= 0) return '0:00';
+        const minutes = Math.floor(timeInSeconds / 60);
+        const seconds = Math.floor(timeInSeconds % 60);
+        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    }
+    
     //get reference to audio element for custom player
     const audioReference = useRef<HTMLAudioElement | null>(null);
 
@@ -32,6 +40,11 @@ export default function AudioPlayer({currentSong, loopFlag, onToggleLoop}: Audio
 
     //useEffect for autoplay on song click
     useEffect (() => {
+        // Control old timestamps on track switch
+        setCurrentTime(0);
+        setDuration(0);
+        setPlaying(false);
+        
         //update only when currentSong is not null
         if (currentSong && audioReference.current) {
             audioReference.current.play()
@@ -62,16 +75,34 @@ export default function AudioPlayer({currentSong, loopFlag, onToggleLoop}: Audio
                             ref={audioReference}
                             src={`http://localhost:5000/uploads/${encodeURIComponent(currentSong)}`}
                             onLoadedMetadata={(e) => {
-                                setDuration(e.currentTarget.duration);
+                                const audioDuration = e.currentTarget.duration;
+                                if (Number.isFinite(audioDuration)) {
+                                    setDuration(audioDuration);
+                                }
                             }}
                             onTimeUpdate={(e) => {
-                                setCurrentTime(e.currentTarget.currentTime);
+                                const rawTime = e.currentTarget.currentTime;
+
+                                //if time goes over duration, fix with conditional
+                                if (duration > 0) {
+                                    setCurrentTime(Math.min(rawTime, duration));
+                                } else {
+                                    setCurrentTime(rawTime);
+                                }
+
+                            }}
+                            onEnded={() => {
+                                setPlaying(false);
+                                if (!loopFlag && audioReference.current) {
+                                    //set current time when audio ends as a secondary check
+                                    setCurrentTime(duration);
+                                }
                             }}
                         />
 
                         {/* Custom Audio Slider implementation w/ useRef hook */}
                         <div style={{display: 'flex', alignItems: 'center', gap: '8px', width: '100%', maxWidth: '400px'}}>
-                            <span>{Math.floor(currentTime)}s</span>
+                            <span>{formatTime(currentTime)}s</span>
                             <input
                                 type='range'
                                 min={0}
@@ -86,7 +117,7 @@ export default function AudioPlayer({currentSong, loopFlag, onToggleLoop}: Audio
                                 }}
                                 style={{ flex: 1 }}
                             />
-                            <span>{Math.floor(duration)}s</span>
+                            <span>{formatTime(duration)}s</span>
                         </div>
 
                         <button 
