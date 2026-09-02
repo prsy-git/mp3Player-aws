@@ -22,11 +22,15 @@ export default function AudioPlayer({currentSong, loopFlag, onToggleLoop}: Audio
     //track playing state of audio
     const [isPlaying, setPlaying] = useState<boolean>(false);
 
-    //states for duration and timestamp of audio
+    //state for boolean tracking if slider is held
+    const [sliderHeld, setSliderHeld] = useState<boolean>(false);
+
+    //states for duration, timestamp, volume of audio
     const [duration, setDuration] = useState<number>(0);
     const [currentTime, setCurrentTime] = useState<number>(0);
+    const [volume, setVolume] = useState<number>(1);
 
-    //function to set play state
+    //handler function to set play state
     const changePlayState = () => {
         if (!audioReference.current) return; //is null value for reference
 
@@ -38,6 +42,15 @@ export default function AudioPlayer({currentSong, loopFlag, onToggleLoop}: Audio
         
         setPlaying(prev => !prev);
     }
+
+    //handler function to update state and volume in <audio>
+    const changeVolume = (newVolume: number) => {
+        setVolume(newVolume);
+
+        if (audioReference.current) {
+            audioReference.current.volume = newVolume;
+        }
+    };
 
     //useEffect for autoplay on song click
     useEffect (() => {
@@ -81,17 +94,18 @@ export default function AudioPlayer({currentSong, loopFlag, onToggleLoop}: Audio
                                     setDuration(audioDuration);
                                 }
                             }}
+
                             onTimeUpdate={(e) => {
-                                const rawTime = e.currentTarget.currentTime;
-
-                                //if time goes over duration, fix with conditional
-                                if (duration > 0) {
-                                    setCurrentTime(Math.min(rawTime, duration));
-                                } else {
-                                    setCurrentTime(rawTime);
+                                if (!sliderHeld) {
+                                    const rawTime = e.currentTarget.currentTime;
+                                    if (duration > 0) {
+                                        setCurrentTime(Math.min(rawTime, duration));
+                                    } else {
+                                        setCurrentTime(rawTime);
+                                    }
                                 }
-
                             }}
+
                             onEnded={() => {
                                 setPlaying(false);
                                 if (!loopFlag && audioReference.current) {
@@ -109,16 +123,35 @@ export default function AudioPlayer({currentSong, loopFlag, onToggleLoop}: Audio
                                 min={0}
                                 max={duration || 0}
                                 value={currentTime}
+                                onMouseDown={() => setSliderHeld(true)}
                                 onChange={(e) => {
-                                    const newDisplayTime = Number(e.target.value);
-                                    setCurrentTime(newDisplayTime);
+                                    setCurrentTime(Number(e.target.value));
+                                }}
+                                onMouseUp={(e) => {
+                                    setSliderHeld(false);
+                                    const finalTime = Number((e.target as HTMLInputElement).value);
                                     if (audioReference.current) {
-                                        audioReference.current.currentTime = newDisplayTime;
+                                        audioReference.current.currentTime = finalTime;
                                     }
                                 }}
                                 style={{ flex: 1 }}
                             />
                             <span>{formatTime(duration)}s</span>
+                        </div>
+
+                        {/* Volume slider implementation */}
+                        <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                <label htmlFor="volume-slider">Volume:</label>
+                                <input
+                                    id="volume-slider"
+                                    type="range"
+                                    min={0}
+                                    max={1}
+                                    step={0.01}
+                                    value={volume}
+                                    onChange={(e) => changeVolume(Number(e.target.value))}
+                                />
+                                <span>{Math.round(volume * 100)}%</span>
                         </div>
 
                         <button 

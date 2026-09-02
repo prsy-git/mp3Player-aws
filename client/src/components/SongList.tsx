@@ -20,10 +20,21 @@ export default function SongList({ onSelectSong }: SongListProps) {
     }, []);
 
     //delete handler
-    const handleDelete = (songName: string) => {
-        //filter for the songName to be dropped
-        setSongs((prevSongs) => prevSongs.filter((song) => song !== songName))
-    }
+    const handleDelete = async (songName: string) => {
+        try {
+            const res = await fetch(`http://localhost:5000/api/tracks/${encodeURIComponent(songName)}`, {
+                method: 'DELETE',
+            });
+
+            if (res.ok) {
+                setSongs((prevSongs) => prevSongs.filter((song) => song !== songName));
+            } else {
+                console.error('Failed to delete track from backend');
+            }
+        } catch (err) {
+            console.error('Error deleting track');
+        }
+    };
 
 
     return (

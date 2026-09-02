@@ -66,9 +66,9 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 });
 
 //DELETE for song removal on delete button
-app.delete('api/tracks/:filename', (req, res) => {
+app.delete('/api/tracks/:filename', (req, res) => {
     const filename = req.params.filename;
-    const filePath = path.join(__dirname, 'uploads', filename);
+    const filePath = path.join(process.cwd(), 'uploads', filename);
 
     //Remove file at disk location
     fs.unlink(filePath, (err) => {

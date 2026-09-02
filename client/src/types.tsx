@@ -7,7 +7,7 @@ export interface Song {
 
 //defines state for music player component
 export interface AudioPlayerProps {
-    currentSong: string | null;
+    currentSong: Song | null;
     loopFlag: boolean;
     onToggleLoop: () => void;
 }
