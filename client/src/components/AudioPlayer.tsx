@@ -1,12 +1,6 @@
 import { AudioPlayerProps } from '../types';
 import {useState, useEffect, useRef} from 'react';
 
-// interface AudioPlayerProps {
-//   currentSong: string | null;
-//   loopFlag: boolean;
-//   onToggleLoop: () => void;
-// }
-
 export default function AudioPlayer({currentSong, loopFlag, onToggleLoop}: AudioPlayerProps) {
     //function to format time output on slider display
     const formatTime = (timeInSeconds: number): string => {
