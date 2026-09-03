@@ -5,6 +5,14 @@ export interface Song {
     duration: number;
 }
 
+//Playlist interface / data structure
+export interface Playlist {
+    id: string;
+    name: string;
+    isDefault?: boolean;
+    songs: Song[];
+}
+
 //defines state for music player component
 export interface AudioPlayerProps {
     currentSong: Song | null;
@@ -12,10 +20,9 @@ export interface AudioPlayerProps {
     onToggleLoop: () => void;
 }
 
-//Playlist interface / data structure
-export interface Playlist {
-    id: string;
-    name: string;
-    isDefault?: boolean;
-    songs: Song[];
+//prop compile for sidebar component
+export interface SidebarProps {
+    playlists: Playlist[];
+    selectedPlaylistId: string;
+    onSelectPlaylist: (playlistId: string) => void;
 }

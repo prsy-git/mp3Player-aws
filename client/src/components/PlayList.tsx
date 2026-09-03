@@ -8,10 +8,9 @@ interface PlaylistProps {
 }
 
 export default function PlayList({playlist, currentSong, onSelectSong, onDeleteSong}: PlaylistProps) {
-
     return (
         <div style={{ width: '100%', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <h2>{playlist.name}</h2>
+            <h2>Current Playlist: {playlist.name}</h2>
 
             {playlist.songs.length === 0 && <p>No songs in this playlist.</p>}
 
