@@ -98,6 +98,7 @@ export default function App() {
                     setCurrentSong(song);
                     setLoopFlag(false);
                 }}
+                onDeleteSong={handleDeleteSong}
             />
         
         </main>

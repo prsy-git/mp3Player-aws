@@ -40,11 +40,23 @@ export default function PlayList({playlist, currentSong, onSelectSong, onDeleteS
                                 }}
                                 onClick={() => onSelectSong(song, index)}
                             >
-                                <span>{index + 1}. {song.title}</span>
+                                <span
+                                    style={{
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                        minWidth: 0,
+                                        flex: 1,
+                                    }}
+                                    title={`${index + 1}. {song.title}`}
+                                >
+                                    {index + 1}. {song.title}
+                                </span>
 
                                 {onDeleteSong && (
                                     <button
                                         type="button"
+                                        style={{ flexShrink: 0 }}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             onDeleteSong(song.id);
@@ -60,23 +72,4 @@ export default function PlayList({playlist, currentSong, onSelectSong, onDeleteS
             )}
         </div>
     );
-    
-    
-    // return (
-    //     <div style={{ width: '100%', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-    //         <h2>{playlist.name}</h2>
-
-    //         {playlist.songs.length === 0 && <p>No songs in this playlist.</p>}
-
-    //         {playlist.songs.length > 0 && (
-    //             <ul>
-    //                 {playlist.songs.map((song, index) => 
-    //                     <li key={song.id} onClick={() => onSelectSong(song, index)}>
-    //                         {song.title}
-    //                     </li>
-    //                 )}
-    //             </ul>
-    //         )}
-    //     </div>
-    // )
 }
