@@ -18,7 +18,6 @@ export default function App() {
     const [playlists, setPlaylists] = useState<Playlist[]>([
         { id: 'library', name: 'All Uploads', songs: []},
         { id: 'favorites', name: 'Favorites', songs: []},
-        { id: 'testlist', name: 'test3', songs: []}
     ]);
 
     //Track state of currently selected playlist id element (by default / on startup, library)
@@ -27,7 +26,7 @@ export default function App() {
     //Active playlist object dervied from id
     const activePlaylist = playlists.find((p) => p.id === selectedPlaylistId) || playlists[0];
 
-    //Fetch current tracks on refreshFlag state change.
+    //Fetch current tracks on refreshFlag state change to update 'library' bucket.
     useEffect(() => {
         fetch('http://localhost:5000/api/tracks')
             .then((res) => res.json())
@@ -48,7 +47,7 @@ export default function App() {
             .catch((err) => console.error('Could not load library tracks:', err))
     }, [refreshFlag]);
 
-    //Backend delete for playlist items
+    //Backend delete for playlist items. NOTE: Traverses playlists to remove artifacts / pointers to deleted song
     const handleDeleteSong = async (songId: string) => {
         try {
             const res = await fetch(`http://localhost:5000/api/tracks/${encodeURIComponent(songId)}`, {
@@ -57,9 +56,10 @@ export default function App() {
 
             if (res.ok) {
                 setPlaylists((prev) => 
-                    prev.map((playlist) => 
-                        playlist.id === 'library' ? {...playlist, songs: playlist.songs.filter((song) => song.id !== songId)} : playlist
-                    )
+                    prev.map((playlist) => ({
+                        ...playlist,
+                        songs: playlist.songs.filter((song) => song.id !== songId),
+                    }))
                 );
             }
 
@@ -83,41 +83,81 @@ export default function App() {
         setLoopFlag((prev) => !prev);
     }
 
+    //Add to playlist onClick handler
+    const handleAddSongToPlaylist = (targetPlaylistId: string, addedSong: Song) => {
+        setPlaylists((prevPlaylists) => 
+            prevPlaylists.map((pl) => {
+                if (pl.id !== targetPlaylistId) return pl;
+
+                if (pl.songs.some((s) => s.id == addedSong.id)) return pl;
+
+                return {
+                    ...pl,
+                    songs: [...pl.songs, addedSong]
+                };
+            })
+        );
+    };
+
+    //Add remove from playlist handler.
+    const handleDeleteSongFromPlaylist = (playlistId: string, songId: string) => {
+        setPlaylists((prev) =>
+            prev.map((pl) => {
+                if (pl.id !== playlistId) return pl;
+
+                return {
+                    ...pl,
+                    songs: pl.songs.filter((song) => song.id === songId),
+                };
+            })
+        );
+    };
+
     return (
         
         <div style={{display: 'flex', gap: '24px', maxWidth: '1100px', margin: '40px auto', alignItems: 'flex-start'}}>
-            
-            {/*Test of display for basic Sidebar implementation*/}
-            <Sidebar
-                playlists={playlists}
-                selectedPlaylistId={selectedPlaylistId}
-                onSelectPlaylist={setSelectedPlaylistId}
-            >
-            </Sidebar>
-            
+          
             <main className="app-container">
-            
-                <Header/>
 
-                <p>File upload form</p>
-                <UploadForm onUploadSuccess={handleUploadSuccess} />
-
-                <AudioPlayer
-                    currentSong={currentSong}
-                    loopFlag={loopFlag}
-                    onToggleLoop={toggleLoop}
+                {/*Test of display for basic Sidebar implementation*/}
+                <Sidebar
+                    playlists={playlists}
+                    selectedPlaylistId={selectedPlaylistId}
+                    onSelectPlaylist={setSelectedPlaylistId}
                 >
-                </AudioPlayer>
+                </Sidebar>
 
-                <PlayList 
-                    playlist={activePlaylist}
-                    currentSong={currentSong}
-                    onSelectSong={(song, index) => {
-                        setCurrentSong(song);
-                        setLoopFlag(false);
-                    }}
-                    onDeleteSong={handleDeleteSong}
-                />  
+                <div className="main-block">
+                    <Header/>
+
+                    <p>Use this form to upload to 'All Uploads' playlist.</p>
+                    <UploadForm onUploadSuccess={handleUploadSuccess} />
+
+                    <AudioPlayer
+                        currentSong={currentSong}
+                        loopFlag={loopFlag}
+                        onToggleLoop={toggleLoop}
+                    >
+                    </AudioPlayer>
+
+                    <PlayList 
+                        playlist={activePlaylist}
+                        playlists={playlists}
+                        currentSong={currentSong}
+                        onSelectSong={(song, index) => {
+                            setCurrentSong(song);
+                            setLoopFlag(false);
+                        }}
+
+                        //use undefined conditional to decide what value to pass to PlayList.tsx
+                        onDeleteSong={activePlaylist.id === 'library' ? handleDeleteSong : undefined}
+                        onRemoveFromPlaylist={activePlaylist.id !== 'library' 
+                            ? (songId) => handleDeleteSongFromPlaylist(activePlaylist.id, songId) : undefined}
+                        
+                        onAddSongToPlaylist={handleAddSongToPlaylist}
+                    />  
+                </div>
+
             </main>
         </div>
     )
