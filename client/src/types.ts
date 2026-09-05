@@ -25,4 +25,6 @@ export interface SidebarProps {
     playlists: Playlist[];
     selectedPlaylistId: string;
     onSelectPlaylist: (playlistId: string) => void;
+    onCreatePlaylist: (name: string) => void;
+    onDeletePlaylist: (id: string) => void;
 }

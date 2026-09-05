@@ -113,6 +113,28 @@ export default function App() {
         );
     };
 
+    //Sidebar handler for adding playlists
+    const handleCreatePlaylist = (name: string) => {
+        const newPlaylist: Playlist = {
+            id: `playlist-${Date.now()}`, //unique generated per current time
+            name: name.trim(),
+            songs: [],
+        };
+
+        setPlaylists((prev) => [...prev, newPlaylist]);
+    };
+
+    //Sidebar handler for deleting playlists
+    const handleDeletePlaylist = (removeId: string) => {
+        if (removeId === 'library') return;
+        
+        setPlaylists((prevPlaylists) => prevPlaylists.filter((pl) => pl.id !== removeId));
+
+        if (selectedPlaylistId === removeId) {
+            setSelectedPlaylistId('library');
+        }
+    };
+
     return (
         
         <div style={{display: 'flex', gap: '24px', maxWidth: '1100px', margin: '40px auto', alignItems: 'flex-start'}}>
@@ -124,6 +146,8 @@ export default function App() {
                     playlists={playlists}
                     selectedPlaylistId={selectedPlaylistId}
                     onSelectPlaylist={setSelectedPlaylistId}
+                    onCreatePlaylist={handleCreatePlaylist}
+                    onDeletePlaylist={handleDeletePlaylist}
                 >
                 </Sidebar>
 
