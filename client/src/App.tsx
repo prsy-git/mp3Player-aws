@@ -89,7 +89,7 @@ export default function App() {
             prevPlaylists.map((pl) => {
                 if (pl.id !== targetPlaylistId) return pl;
 
-                if (pl.songs.some((s) => s.id == addedSong.id)) return pl;
+                if (pl.songs.some((s) => s.id === addedSong.id)) return pl;
 
                 return {
                     ...pl,
@@ -107,7 +107,7 @@ export default function App() {
 
                 return {
                     ...pl,
-                    songs: pl.songs.filter((song) => song.id === songId),
+                    songs: pl.songs.filter((song) => song.id !== songId),
                 };
             })
         );
