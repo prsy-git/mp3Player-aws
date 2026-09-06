@@ -14,11 +14,18 @@ export default function App() {
     const [refreshFlag, setRefreshFlag] = useState<number>(0);
     const [loopFlag, setLoopFlag] = useState<boolean>(false);
 
-    //Playlist array for eventual sidebar interaction
+    /* --- Array / Queue Objects Needed for Implementation Across the App */
+    
+    //Queue for managing shuffle play functionality
+    const [autoplayQueue, setAutoplayQueue] = useState<Song[]>([]);
+
+    //Playlist array for sidebar interaction
     const [playlists, setPlaylists] = useState<Playlist[]>([
         { id: 'library', name: 'All Uploads', songs: []},
         { id: 'favorites', name: 'Favorites', songs: []},
     ]);
+
+    /* ------------------------------------------------------------------ */
 
     //Track state of currently selected playlist id element (by default / on startup, library)
     const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>('library');
@@ -47,7 +54,7 @@ export default function App() {
             .catch((err) => console.error('Could not load library tracks:', err))
     }, [refreshFlag]);
 
-    //Backend delete for playlist items. NOTE: Traverses playlists to remove artifacts / pointers to deleted song
+    //Backend delete for playlist items handler. NOTE: Traverses playlists to remove artifacts / pointers to deleted song
     const handleDeleteSong = async (songId: string) => {
         try {
             const res = await fetch(`http://localhost:5000/api/tracks/${encodeURIComponent(songId)}`, {
@@ -126,7 +133,7 @@ export default function App() {
 
     //Sidebar handler for deleting playlists
     const handleDeletePlaylist = (removeId: string) => {
-        if (removeId === 'library') return;
+        if (removeId === 'library' || removeId === 'favorites') return;
         
         setPlaylists((prevPlaylists) => prevPlaylists.filter((pl) => pl.id !== removeId));
 
@@ -134,6 +141,104 @@ export default function App() {
             setSelectedPlaylistId('library');
         }
     };
+
+    /* Autoplay / shuffle functionality for state and handlers */
+    const [isAutoplaying, setIsAutoPlaying] = useState<boolean>(false);
+    const [isShuffled, setIsShuffled] = useState<boolean>(false);
+
+    //Autoplay handler for populating queue starting from selected song (clause to respect if shuffle is turned on)
+    const handleSelectSong = (song: Song, index?: number) => {
+        setCurrentSong(song);
+        setLoopFlag(false);
+        
+        //If shuffle is turned on, randomly select from remaining
+        if (isShuffled) {
+            const remaining = activePlaylist.songs.filter((s) => s.id !== song.id)
+            const shuffledRemaining = [...remaining].sort(() => Math.random() - 0.5);
+            setAutoplayQueue([song, ... shuffledRemaining]);
+        }
+        
+        //Index slicing for continuing from chosen song to end of queue in autoplay, if not shuffling
+        else {
+            const selectedIndex = 
+                index !== undefined ? index : activePlaylist.songs.findIndex((s) => s.id === song.id);
+
+            if (selectedIndex !== -1) {
+                setAutoplayQueue(activePlaylist.songs.slice(selectedIndex));
+            }
+        }
+    };
+
+    //Handler for populating queue on a shuffle operation
+    const toggleShuffle = () => {
+        setIsShuffled((prev) => {
+            const nextState = !prev;
+            if (nextState && currentSong) {
+                const remaining = activePlaylist.songs.filter((s) => s.id !== currentSong.id);
+                const shuffledRemaining = [...remaining].sort(() => Math.random() - 0.5);
+                setAutoplayQueue([currentSong, ...shuffledRemaining])
+            }
+
+            else {
+                //Set back to ordered sequence from current position in queue
+                const currentIndex = activePlaylist.songs.findIndex((s) => s.id === currentSong?.id);
+                if (currentIndex !== -1) {
+                    setAutoplayQueue(activePlaylist.songs.slice(currentIndex));
+                }
+            }
+            return nextState;
+        });
+    }
+    
+    
+    //Autoplay handler for song ending behavior
+    const handleSongEnded = () => {
+        if (!isAutoplaying || autoplayQueue.length <= 1) return;
+
+        const nextSong = autoplayQueue[1];
+
+        setCurrentSong(nextSong);
+
+        setAutoplayQueue((prevQueue) => prevQueue.slice(1));
+    };
+
+    //Next previous handler buttons
+    const handleNextSong = () => {
+        if (autoplayQueue.length <= 1) return;
+        const nextSong = autoplayQueue[1];
+        setCurrentSong(nextSong);
+        setAutoplayQueue((prevQueue) => prevQueue.slice(1));
+    };
+
+    const handlePrevSong = () => {
+        const currentIndex = activePlaylist.songs.findIndex((s) => s.id === currentSong?.id);
+        if (currentIndex > 0) {
+            const prevSong = activePlaylist.songs[currentIndex - 1];
+            handleSelectSong(prevSong, currentIndex - 1);
+        }
+    };
+
+    //useEffect to update queue on playlist change
+    useEffect(() => {
+        if (!currentSong) return;
+
+        if (isShuffled) {
+            //Keep song at first index and shuffle remaining queue
+            const remaining = activePlaylist.songs.filter((s) => s.id !== currentSong.id);
+            const shuffledRemaining = [...remaining].sort(() => Math.random() - 0.5);
+            setAutoplayQueue([currentSong, ...shuffledRemaining]);
+        }
+
+        else {
+            //keep order
+            const currentIndex = activePlaylist.songs.findIndex((s) => s.id === currentSong.id)
+            if (currentIndex !== -1) {
+                setAutoplayQueue(activePlaylist.songs.slice(currentIndex));
+            }
+        }
+    }, [selectedPlaylistId, playlists]);
+
+    /* End autoplay code segment */
 
     return (
         
@@ -161,6 +266,18 @@ export default function App() {
                         currentSong={currentSong}
                         loopFlag={loopFlag}
                         onToggleLoop={toggleLoop}
+                        onEnded={handleSongEnded}
+
+                        isAutoplaying={isAutoplaying}
+                        onToggleAutoplay={() => setIsAutoPlaying(prev => !prev)}
+                        isShuffled={isShuffled}
+                        onToggleShuffle={toggleShuffle}
+                        onNext={handleNextSong}
+                        onPrev={handlePrevSong}
+                        hasNext={autoplayQueue.length > 1}
+                        hasPrev={
+                            activePlaylist.songs.findIndex((s) => s.id === currentSong?.id) > 0
+                        }
                     >
                     </AudioPlayer>
 
@@ -168,10 +285,7 @@ export default function App() {
                         playlist={activePlaylist}
                         playlists={playlists}
                         currentSong={currentSong}
-                        onSelectSong={(song, index) => {
-                            setCurrentSong(song);
-                            setLoopFlag(false);
-                        }}
+                        onSelectSong={handleSelectSong}
 
                         //use undefined conditional to decide what value to pass to PlayList.tsx
                         onDeleteSong={activePlaylist.id === 'library' ? handleDeleteSong : undefined}

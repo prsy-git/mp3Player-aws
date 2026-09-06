@@ -18,6 +18,15 @@ export interface AudioPlayerProps {
     currentSong: Song | null;
     loopFlag: boolean;
     onToggleLoop: () => void;
+    onEnded?: () => void;
+    isAutoplaying?: boolean;
+    onToggleAutoplay?: () => void;
+    isShuffled?: boolean;
+    onToggleShuffle?: () => void;
+    onNext?: () => void;
+    onPrev?: () => void;
+    hasNext?: boolean;
+    hasPrev?: boolean;
 }
 
 //prop compile for sidebar component

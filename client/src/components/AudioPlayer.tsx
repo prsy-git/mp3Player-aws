@@ -1,7 +1,20 @@
 import { AudioPlayerProps } from '../types';
 import {useState, useEffect, useRef} from 'react';
 
-export default function AudioPlayer({currentSong, loopFlag, onToggleLoop}: AudioPlayerProps) {
+export default function AudioPlayer({
+    currentSong,
+    loopFlag,
+    onToggleLoop,
+    onEnded,
+    isAutoplaying,
+    onToggleAutoplay,
+    isShuffled,
+    onToggleShuffle,
+    onNext,
+    onPrev,
+    hasNext,
+    hasPrev,
+}: AudioPlayerProps) {
     //function to format time output on slider display
     const formatTime = (timeInSeconds: number): string => {
         if (!Number.isFinite(timeInSeconds) || timeInSeconds <= 0) return '0:00';
@@ -105,6 +118,8 @@ export default function AudioPlayer({currentSong, loopFlag, onToggleLoop}: Audio
                                 if (!loopFlag && audioReference.current) {
                                     //set current time when audio ends as a secondary check
                                     setCurrentTime(duration);
+                                    //Call queue handler
+                                    if (onEnded) onEnded();
                                 }
                             }}
                         />
@@ -119,11 +134,12 @@ export default function AudioPlayer({currentSong, loopFlag, onToggleLoop}: Audio
                                 value={currentTime}
                                 onMouseDown={() => setSliderHeld(true)}
                                 onChange={(e) => {
-                                    setCurrentTime(Number(e.target.value));
+                                    const newTime = Number(e.target.value);
+                                    setCurrentTime(newTime);
                                 }}
                                 onMouseUp={(e) => {
                                     setSliderHeld(false);
-                                    const finalTime = Number((e.target as HTMLInputElement).value);
+                                    const finalTime = Number(e.currentTarget.value);
                                     if (audioReference.current) {
                                         audioReference.current.currentTime = finalTime;
                                     }
@@ -148,16 +164,36 @@ export default function AudioPlayer({currentSong, loopFlag, onToggleLoop}: Audio
                                 <span>{Math.round(volume * 100)}%</span>
                         </div>
 
-                        <button 
-                            type="button" 
-                            onClick={(changePlayState)}
-                        >
-                            {isPlaying ? 'Pause' : 'Play'}
-                        </button>
-                        
-                        <button type="button" onClick={onToggleLoop}>
-                            Loop Current Song: {loopFlag ? 'ON' : 'OFF'} 
-                        </button>
+                        {/* Navigation buttons */}
+                        <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                <button type="button" onClick={onPrev} disabled={!hasPrev}>
+                                    Prev
+                                </button>
+
+                                <button type="button" onClick={(changePlayState)}>
+                                    {isPlaying ? 'Pause' : 'Play'}
+                                </button>
+
+                                <button type="button" onClick={onNext} disabled={!hasNext}>
+                                    Next
+                                </button>
+                        </div>
+
+                        {/* Mode buttons */}
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                            <button type="button" onClick={onToggleLoop}>
+                                Loop Current Song: {loopFlag ? 'ON' : 'OFF'} 
+                            </button>
+
+                            <button type="button" onClick={onToggleAutoplay}>
+                                Autoplay: {isAutoplaying ? 'ON' : 'OFF'}
+                            </button>
+
+                            <button type="button" onClick={onToggleShuffle}>
+                                Shuffle: {isShuffled ? 'ON' : 'OFF'}
+                            </button>
+                        </div>
+
                     </div> 
                 </>
             )}

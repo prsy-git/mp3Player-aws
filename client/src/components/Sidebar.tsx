@@ -59,8 +59,8 @@ export default function Sidebar({ playlists, selectedPlaylistId, onSelectPlaylis
                     >
                         <span>{playlist.name}</span>
 
-                        {/* Delete button should not display for 'library' id playlist */}
-                        {playlist.id !== 'library' && (
+                        {/* Delete button should not display for 'library' or 'favorites' id playlist */}
+                        {playlist.id !== 'library' && playlist.id !== 'favorites' && (
                             <button
                                 type="button"
                                 onClick={(e) => {

@@ -58,7 +58,7 @@ export default function PlayList({
                                         minWidth: 0,
                                         flex: 1,
                                     }}
-                                    title={`${index + 1}. {song.title}`}
+                                    title={`${index + 1}. ${song.title}`}
                                 >
                                     {index + 1}. {song.title}
                                 </span>
