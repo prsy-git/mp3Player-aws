@@ -29,16 +29,3 @@ CREATE TABLE IF NOT EXISTS Playlists_Songs (
     FOREIGN KEY (playlistId) REFERENCES Playlists(playlistId),
     FOREIGN KEY (songId) REFERENCES Songs(songId)
 );
-
---Find all Songs in Favorites playlist
-SELECT Songs.songId, Songs.title, Songs.filePath
-FROM Songs
-JOIN Playlist_Songs ON Songs.songId = Playlists_Songs.songId
-JOIN Playlists ON Playlists_Songs.playlistId = Playlists.playlistId
-WHERE Playlists.name = 'Favorites';
-
---Find all playlists by a user named alice
-SELECT Playlists.playlistId, Playlists.name
-FROM Playlists
-JOIN Users ON Users.userId = Playlists.userId
-WHERE Users.username = 'Alice';
