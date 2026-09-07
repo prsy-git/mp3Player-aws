@@ -153,12 +153,17 @@ export default function App() {
         
         //If shuffle is turned on, randomly select from remaining
         if (isShuffled) {
+            //Take all other songs in chosen playlist via filtering
             const remaining = activePlaylist.songs.filter((s) => s.id !== song.id)
+
+            //Spread remaining array and mix with Math random (temporarily)
             const shuffledRemaining = [...remaining].sort(() => Math.random() - 0.5);
+
+            //Append picked song to queue, followed by the shuffled remaining songs
             setAutoplayQueue([song, ... shuffledRemaining]);
         }
         
-        //Index slicing for continuing from chosen song to end of queue in autoplay, if not shuffling
+        //Default behavior for populating autoplay queue if not shuffling
         else {
             const selectedIndex = 
                 index !== undefined ? index : activePlaylist.songs.findIndex((s) => s.id === song.id);
@@ -173,19 +178,29 @@ export default function App() {
     const toggleShuffle = () => {
         setIsShuffled((prev) => {
             const nextState = !prev;
-            if (nextState && currentSong) {
-                const remaining = activePlaylist.songs.filter((s) => s.id !== currentSong.id);
-                const shuffledRemaining = [...remaining].sort(() => Math.random() - 0.5);
-                setAutoplayQueue([currentSong, ...shuffledRemaining])
+
+
+            if (nextState) {
+                //Force autoplay on if shuffle is active
+                setIsAutoPlaying(true);
+
+                if (currentSong) {
+                    const remaining = activePlaylist.songs.filter((s) => s.id !== currentSong.id);
+                    const shuffledRemaining = [...remaining].sort(() => Math.random() - 0.5);
+                    setAutoplayQueue([currentSong, ...shuffledRemaining]);
+                }
             }
 
             else {
                 //Set back to ordered sequence from current position in queue
-                const currentIndex = activePlaylist.songs.findIndex((s) => s.id === currentSong?.id);
-                if (currentIndex !== -1) {
-                    setAutoplayQueue(activePlaylist.songs.slice(currentIndex));
+                if (currentSong) {
+                    const currentIndex = activePlaylist.songs.findIndex((s) => s.id === currentSong.id);
+                    if (currentIndex !== 1) {
+                        setAutoplayQueue(activePlaylist.songs.slice(currentIndex));
+                    }
                 }
             }
+
             return nextState;
         });
     }
@@ -218,7 +233,7 @@ export default function App() {
         }
     };
 
-    //useEffect to update queue on playlist change
+    //useEffect to update queue when switching active playlist
     useEffect(() => {
         if (!currentSong) return;
 
@@ -230,13 +245,13 @@ export default function App() {
         }
 
         else {
-            //keep order
+            //Keep standard order from position current song to end of playlist
             const currentIndex = activePlaylist.songs.findIndex((s) => s.id === currentSong.id)
             if (currentIndex !== -1) {
                 setAutoplayQueue(activePlaylist.songs.slice(currentIndex));
             }
         }
-    }, [selectedPlaylistId, playlists]);
+    }, [selectedPlaylistId]);
 
     /* End autoplay code segment */
 

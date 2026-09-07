@@ -56,12 +56,18 @@ export default function Sidebar({ playlists, selectedPlaylistId, onSelectPlaylis
                     <li 
                         key={playlist.id}
                         onClick={() => onSelectPlaylist(playlist.id)}
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                        }}
                     >
                         <span>{playlist.name}</span>
 
                         {/* Delete button should not display for 'library' or 'favorites' id playlist */}
                         {playlist.id !== 'library' && playlist.id !== 'favorites' && (
                             <button
+                                style={{ marginLeft: 'auto' }}
                                 type="button"
                                 onClick={(e) => {
                                     e.stopPropagation();

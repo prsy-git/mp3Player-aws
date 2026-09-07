@@ -185,7 +185,7 @@ export default function AudioPlayer({
                                 Loop Current Song: {loopFlag ? 'ON' : 'OFF'} 
                             </button>
 
-                            <button type="button" onClick={onToggleAutoplay}>
+                            <button type="button" disabled={isShuffled} onClick={onToggleAutoplay}>
                                 Autoplay: {isAutoplaying ? 'ON' : 'OFF'}
                             </button>
 
