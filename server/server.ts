@@ -4,6 +4,9 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
+//--- SQL Route Imports
+import userRoutes from './routes/users.js';
+
 const app = express();
 const PORT = 5000;
 
@@ -80,6 +83,9 @@ app.delete('/api/tracks/:filename', (req, res) => {
         res.status(200).json({ message: "File successfully removed from uploads." });
     })
 })
+
+//--- SQL DATABASE ROUTES ---
+app.use('/api/users', userRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server listening on http://localhost:${PORT}`);
