@@ -3,11 +3,15 @@ import cors from 'cors';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import SqliteStoreInit from 'better-sqlite3-session-store';
+import session from 'express-session';
+import db from './db/db.js';
 
 //--- SQL Route Imports
 import userRoutes from './routes/users.js';
 
 const app = express();
+const SqliteStore = SqliteStoreInit(session);
 const PORT = 5000;
 
 app.use(cors());
