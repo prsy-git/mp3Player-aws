@@ -37,4 +37,43 @@ router.post('/register-user', async (req, res) => {
     }
 });
 
+//--- Temp interface for performing password check ---
+interface passCheckInfo {
+    username: string;
+    passwordHash: string;
+}
+
+router.post('/validate-login', async (req, res) => {
+    const { username, userPassword } = req.body;
+    
+    try {
+        const query = `
+            SELECT username, passwordHash
+            FROM Users
+            WHERE username = ?;
+        `;
+
+        const statement = db.prepare(query);
+        
+        const result = statement.get(username) as passCheckInfo | undefined;
+
+        if (!result) {
+            return res.status(401).json({ error: 'Invalid username or password.'})
+        }
+        
+        const samePass: boolean = await bcrypt.compare(userPassword, result.passwordHash);
+
+        if (!samePass) {
+            return res.status(401).json({ error: 'Invalid username or password.'})
+        } else {
+            res.status(201).json({
+                message: 'Information validated; logging in.'
+            })
+        } 
+
+    } catch (error: any) {
+        res.status(500).json({ error: 'Server error occured. '});
+    }
+});
+
 export default router;
