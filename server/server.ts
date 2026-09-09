@@ -7,15 +7,37 @@ import SqliteStoreInit from 'better-sqlite3-session-store';
 import session from 'express-session';
 import db from './db/db.js';
 
-//--- SQL Route Imports
-import userRoutes from './routes/users.js';
-
 const app = express();
 const SqliteStore = SqliteStoreInit(session);
 const PORT = 5000;
 
 app.use(cors());
 app.use(express.json());
+
+//--- Configuration for session middleware
+app.use(
+    session({
+        store: new SqliteStore({
+            client: db,
+            expired: {
+                clear: true,
+                intervalMs: 900000,
+            },
+        }),
+        secret: 'placeholder-test-key-to-be-replaced-by-env-var',
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            maxAge: 1000 * 60 * 60 * 24 * 7,
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: false,
+        }
+    })
+);
+
+//--- SQL Route Imports
+import userRoutes from './routes/users.js';
 
 //multer file upload handling
 const fileStorage = multer.diskStorage({

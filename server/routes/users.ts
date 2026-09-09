@@ -41,6 +41,7 @@ router.post('/register-user', async (req, res) => {
 interface passCheckInfo {
     username: string;
     passwordHash: string;
+    userId: number;
 }
 
 router.post('/validate-login', async (req, res) => {
@@ -48,7 +49,7 @@ router.post('/validate-login', async (req, res) => {
     
     try {
         const query = `
-            SELECT username, passwordHash
+            SELECT username, passwordHash, userId
             FROM Users
             WHERE username = ?;
         `;
@@ -66,14 +67,39 @@ router.post('/validate-login', async (req, res) => {
         if (!samePass) {
             return res.status(401).json({ error: 'Invalid username or password.'})
         } else {
+            req.session.userId = result.userId
             res.status(201).json({
                 message: 'Information validated; logging in.'
             })
         } 
 
     } catch (error: any) {
+        console.error(" Specific registration error:", error);
         res.status(500).json({ error: 'Server error occured. '});
     }
+});
+
+router.post('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            return res.status(500).json({ error: 'Unable to wipe session from database store '})
+        }
+
+        res.clearCookie('connect.sid');
+        return res.status(200).json({ message: 'Session deleted from database store '})
+    })
+})
+
+//Auth check
+router.get('/me', (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ error: 'Session not authenticated' });
+    }
+
+    res.json({
+        message: 'Session active',
+        userId: req.session.userId
+    });
 });
 
 export default router;
