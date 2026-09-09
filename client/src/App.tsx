@@ -6,8 +6,49 @@ import UploadForm from './components/UploadForm';
 import AudioPlayer from './components/AudioPlayer';
 import PlayList from './components/PlayList';
 import Sidebar from './components/Sidebar';
+import AuthenticationForm from './components/AuthenticationForm';
+
+//Interface defined for user state
+interface User {
+    userId: number,
+    username?: string
+}
 
 export default function App() {
+    
+    /* --- Code dealing primarily with user authentication --- */
+    const [user, setUser] = useState<User | null>(null);
+    const [authenticationLoading, setAuthenticationLoading] = useState<boolean>(true);
+
+    // Check existing cookies
+    useEffect(() => {
+        fetch('http://localhost:5000/api/users/me', {
+            credentials: 'include'
+        })
+            .then((res) => {
+                if (res.ok) return res.json();
+                throw new Error('Not logged in');
+            })
+            .then((data) => setUser({ userId: data.userId, username: data.username }))
+            .catch(() => setUser(null))
+            .finally(() => setAuthenticationLoading(false));
+    }, []);
+
+    // Logout handler
+    const handleLogout = async () => {
+        try {
+            await fetch ('http://localhost:5000/api/users/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
+        } catch (err) {
+            console.error('Logout error', err)
+        } finally {
+            setUser(null)
+        }
+    }
+    
+    /* --- Code relevant to the function of general routing and handling for the app components --- */
     
     //states to manage that are relevant for multiple components / across the app
     const [currentSong, setCurrentSong] = useState<Song | null>(null)
@@ -33,15 +74,27 @@ export default function App() {
     //Active playlist object dervied from id
     const activePlaylist = playlists.find((p) => p.id === selectedPlaylistId) || playlists[0];
 
-    //Fetch current tracks on refreshFlag state change to update 'library' bucket.
+    //Interface to match database structure for fetch useEffect
+    interface ServerSong {
+        songId: number;
+        title: string;
+        filePath: string;
+    }
+
+    //Fetch current tracks on refreshFlag state change to update 'library' bucket. Use user in dependency array for localized behavior
     useEffect(() => {
-        fetch('http://localhost:5000/api/tracks')
+        if (!user) return;
+        
+        fetch('http://localhost:5000/api/songs', {
+            credentials: 'include',
+        })
             .then((res) => res.json())
-            .then((data: { songs: string[] }) => {
-                const inFormatSongs: Song[] = data.songs.map((songName) => ({
-                    id: songName,
-                    title: songName,
+            .then((data: { songs: ServerSong[] }) => {
+                const inFormatSongs: Song[] = data.songs.map((song) => ({
+                    id: String(song.songId),
+                    title: song.title,
                     duration: 0,
+                    filePath: song.filePath
                 }));
 
                 setPlaylists((prev) => 
@@ -52,13 +105,14 @@ export default function App() {
             })
 
             .catch((err) => console.error('Could not load library tracks:', err))
-    }, [refreshFlag]);
+    }, [refreshFlag, user]);
 
-    //Backend delete for playlist items handler. NOTE: Traverses playlists to remove artifacts / pointers to deleted song
+    //Backend delete for playlist items handler updated to utilize database ID
     const handleDeleteSong = async (songId: string) => {
         try {
-            const res = await fetch(`http://localhost:5000/api/tracks/${encodeURIComponent(songId)}`, {
+            const res = await fetch(`http://localhost:5000/api/songs/${songId}`, {
                 method: 'DELETE',
+                credentials: 'include'
             });
 
             if (res.ok) {
@@ -254,6 +308,24 @@ export default function App() {
     }, [selectedPlaylistId]);
 
     /* End autoplay code segment */
+
+    /* --- Conditionally display authentication in progress alternative display --- */
+    if (authenticationLoading) {
+        return (
+            <div style={{ textAlign: 'center', marginTop: '100px', fontFamily: 'sans-serif'}}>
+                <p>Loading application session with authenticator...</p>
+            </div>
+        );
+    }
+
+    // Logged out user display
+    if (!user) {
+        return (
+            <AuthenticationForm
+                onAuthSuccess={(userId) => setUser( {userId} )}
+            />
+        );
+    }
 
     return (
         

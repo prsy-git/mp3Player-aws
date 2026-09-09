@@ -11,7 +11,10 @@ const app = express();
 const SqliteStore = SqliteStoreInit(session);
 const PORT = 5000;
 
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}))
 app.use(express.json());
 
 //--- Configuration for session middleware
@@ -38,21 +41,22 @@ app.use(
 
 //--- SQL Route Imports
 import userRoutes from './routes/users.js';
+import songRoutes from './routes/songs.js';
 
 //multer file upload handling
-const fileStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/')
-    },
+// const fileStorage = multer.diskStorage({
+//     destination: (req, file, cb) => {
+//         cb(null, 'uploads/')
+//     },
 
-    filename: (req, file, cb) => {
-        const originalName = file.originalname
-        const cleanedName = originalName.replaceAll(' ', '');
-        cb(null, cleanedName)
-    }
-})
+//     filename: (req, file, cb) => {
+//         const originalName = file.originalname
+//         const cleanedName = originalName.replaceAll(' ', '');
+//         cb(null, cleanedName)
+//     }
+// })
 
-const upload = multer({ storage: fileStorage });
+// const upload = multer({ storage: fileStorage });
 
 //Serve audio files from uploads folder to client tier
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
@@ -85,14 +89,14 @@ app.get('/api/tracks', (req, res) => {
 });
 
 //POST for file uploads
-app.post('/api/upload', upload.single('file'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: 'No file passed.'})
-    }
+// app.post('/api/upload', upload.single('file'), (req, res) => {
+//     if (!req.file) {
+//         return res.status(400).json({ error: 'No file passed.'})
+//     }
 
-    console.log('File uploaded:', req.file.originalname);
-    res.status(200).json({ message: 'Success', filename: req.file.originalname });
-});
+//     console.log('File uploaded:', req.file.originalname);
+//     res.status(200).json({ message: 'Success', filename: req.file.originalname });
+// });
 
 //DELETE for song removal on delete button
 app.delete('/api/tracks/:filename', (req, res) => {
@@ -112,6 +116,7 @@ app.delete('/api/tracks/:filename', (req, res) => {
 
 //--- SQL DATABASE ROUTES ---
 app.use('/api/users', userRoutes);
+app.use('/api/songs', songRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server listening on http://localhost:${PORT}`);

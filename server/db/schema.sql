@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS Playlists (
     name VARCHAR(100) NOT NULL,
     userId INTEGER NOT NULL,
 
-    FOREIGN KEY (userId) REFERENCES Users(userId)
+    FOREIGN KEY (userId) REFERENCES Users(userId) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS Songs (
@@ -19,13 +19,13 @@ CREATE TABLE IF NOT EXISTS Songs (
     filePath VARCHAR(255) NOT NULL,
     uploadingUser INTEGER NOT NULL,
 
-    FOREIGN KEY (uploadingUser) REFERENCES Users(userId)
+    FOREIGN KEY (uploadingUser) REFERENCES Users(userId) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS Playlists_Songs (
     playlistId INTEGER,
     songId INTEGER,
     PRIMARY KEY (playlistId, songId),
-    FOREIGN KEY (playlistId) REFERENCES Playlists(playlistId),
-    FOREIGN KEY (songId) REFERENCES Songs(songId)
+    FOREIGN KEY (playlistId) REFERENCES Playlists(playlistId) ON DELETE CASCADE,
+    FOREIGN KEY (songId) REFERENCES Songs(songId) ON DELETE CASCADE
 );

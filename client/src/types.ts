@@ -3,6 +3,7 @@ export interface Song {
     id: string;
     title: string;
     duration: number;
+    filePath: string;
 }
 
 //Playlist interface / data structure
