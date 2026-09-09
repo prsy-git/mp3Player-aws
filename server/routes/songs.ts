@@ -28,7 +28,7 @@ router.post('/upload', requireAuth, upload.single('file'), (req, res) => {
     }
 
     const title = req.body.title || req.file.originalname;
-    const filepath = req.file.path;
+    const filepath = `/uploads/${req.file.filename}`;
     const uploadingUser = req.session.userId;
 
     try {
@@ -47,6 +47,25 @@ router.post('/upload', requireAuth, upload.single('file'), (req, res) => {
     } catch (error) {
         console.error('Specific database error on file upload attempt: ', error);
         res.status(500).json({ error: 'Could not upload song in database' });
+    }
+});
+
+router.get('/', requireAuth, (req, res) => {
+    const uploadingUser = req.session.userId;
+
+    try {
+        const query = `
+            SELECT songId, title, filePath
+            FROM Songs
+            WHERE uploadingUser = ?
+        `;
+        const statement = db.prepare(query)
+        const result = statement.all(uploadingUser) //user songs
+
+        res.status(200).json({ songs: result });
+    } catch (error) {
+        console.error('Database error fetching tracks for user:', error);
+        res.status(500).json({ error: 'Could not fetch songs from database '});
     }
 });
 

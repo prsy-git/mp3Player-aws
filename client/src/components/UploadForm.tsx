@@ -28,9 +28,10 @@ export default function UploadForm({ onUploadSuccess }: UploadFormProps) {
 
         try {
             setStatus('Uploading...');
-            const res = await fetch('http://localhost:5000/api/upload', { //check if correct path
+            const res = await fetch('http://localhost:5000/api/songs/upload', { //check if correct path
                 method: 'POST',
                 body: formData,
+                credentials: 'include'
             });
 
             if (res.ok) {

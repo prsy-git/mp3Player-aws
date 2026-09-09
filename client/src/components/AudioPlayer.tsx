@@ -94,7 +94,8 @@ export default function AudioPlayer({
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px'}}>   
                         <audio 
                             ref={audioReference}
-                            src={`http://localhost:5000/uploads/${encodeURIComponent(currentSong.filePath)}`}
+                            crossOrigin="anonymous"
+                            src={`http://localhost:5000${currentSong.filePath}`}
                             onLoadedMetadata={(e) => {
                                 const audioDuration = e.currentTarget.duration;
                                 if (Number.isFinite(audioDuration)) {

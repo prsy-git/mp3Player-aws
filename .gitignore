@@ -138,3 +138,8 @@ dist
 #Do not add files put in uploads to the git storage
 **/uploads/*
 !**/uploads/.gitkeep
+
+#Do not add sensitive database files to git repository
+db/*.db
+db/*.db-shm
+db/*.db-wal
