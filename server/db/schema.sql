@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS Songs (
     filePath VARCHAR(255) NOT NULL,
     uploadingUser INTEGER NOT NULL,
 
-    FOREIGN KEY (uploadinguser) REFERENCES Users(userId)
+    FOREIGN KEY (uploadingUser) REFERENCES Users(userId)
 );
 
 CREATE TABLE IF NOT EXISTS Playlists_Songs (
