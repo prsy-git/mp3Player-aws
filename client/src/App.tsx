@@ -116,6 +116,11 @@ export default function App() {
             });
 
             if (res.ok) {
+
+                if (currentSong?.id == songId) {
+                    setCurrentSong(null);
+                }
+
                 setPlaylists((prev) => 
                     prev.map((playlist) => ({
                         ...playlist,

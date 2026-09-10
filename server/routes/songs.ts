@@ -69,4 +69,49 @@ router.get('/', requireAuth, (req, res) => {
     }
 });
 
+router.delete('/:id', requireAuth, (req, res) => {
+    const songId = req.params.id;
+    const uploadingUser = req.session.userId;
+
+    try {
+        const selectQuery = `
+            SELECT filePath
+            FROM Songs
+            WHERE songId = ? AND uploadingUser = ?
+        `;
+        
+        const song = db.prepare(selectQuery).get(songId, uploadingUser) as { filePath: string };
+
+        if (!song) {
+            return res.status(404).json({ error: 'Song not found or not authorized to retrieve song '});
+        }
+
+        const deleteQuery = `
+            DELETE FROM Songs
+            WHERE songId = ? AND uploadingUser = ?
+        `;
+        
+        const deleteStatement = db.prepare(deleteQuery);
+        const deleteResult = deleteStatement.run(songId, uploadingUser);
+
+        if (deleteResult.changes == 0) {
+            return res.status(400).json({ error: 'Could not remove song record from database' });
+        }
+
+        const relativePath = song.filePath?.startsWith('/') ? song.filePath.slice(1) : song.filePath;
+        const absolutePath = path.join(process.cwd(), 'server', relativePath);
+
+        fs.unlink(absolutePath, (err) => {
+            if (err) {
+                console.warn(`Row removed, but files not deleted from upload bucket / backend at ${absolutePath}`);
+            }
+        });
+
+        res.status(200).json({ message: 'Song deleted'});
+    }   catch (error) {
+        console.error('Database error deleting song:', error);
+        res.status(500).json({ error: 'Could not delete song' });
+    }
+})
+
 export default router;
