@@ -99,7 +99,7 @@ router.delete('/:id', requireAuth, (req, res) => {
         }
 
         const relativePath = song.filePath?.startsWith('/') ? song.filePath.slice(1) : song.filePath;
-        const absolutePath = path.join(process.cwd(), 'server', relativePath);
+        const absolutePath = path.join(process.cwd(), relativePath);
 
         fs.unlink(absolutePath, (err) => {
             if (err) {

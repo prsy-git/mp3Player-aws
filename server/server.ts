@@ -42,6 +42,7 @@ app.use(
 //--- SQL Route Imports
 import userRoutes from './routes/users.js';
 import songRoutes from './routes/songs.js';
+import playlistRoutes from './routes/playlists.js';
 
 //multer file upload handling
 // const fileStorage = multer.diskStorage({
@@ -117,6 +118,7 @@ app.delete('/api/tracks/:filename', (req, res) => {
 //--- SQL DATABASE ROUTES ---
 app.use('/api/users', userRoutes);
 app.use('/api/songs', songRoutes);
+app.use('/api/playlists', playlistRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server listening on http://localhost:${PORT}`);

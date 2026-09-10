@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS Songs (
 CREATE TABLE IF NOT EXISTS Playlists_Songs (
     playlistId INTEGER,
     songId INTEGER,
+    position INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (playlistId, songId),
     FOREIGN KEY (playlistId) REFERENCES Playlists(playlistId) ON DELETE CASCADE,
     FOREIGN KEY (songId) REFERENCES Songs(songId) ON DELETE CASCADE
