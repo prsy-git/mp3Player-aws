@@ -107,7 +107,10 @@ export default function PlayList({
                                     {onRemoveFromPlaylist && (
                                         <button
                                             type="button"
-                                            onClick={() => onRemoveFromPlaylist(song.id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                onRemoveFromPlaylist(song.id)
+                                            }}
                                         >
                                             Remove
                                         </button>

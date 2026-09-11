@@ -4,7 +4,7 @@ import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
-router.post('/create', requireAuth, (req, res) => {
+router.post('/', requireAuth, (req, res) => {
     const playlistName = req.body.name;
     const userId = req.session.userId;
 
@@ -41,8 +41,8 @@ router.get('/', requireAuth, (req, res) => {
 
         const query = `
             SELECT
-                p.playlistId,
-                p.name AS playlistName,
+                pl.playlistId,
+                pl.name AS playlistName,
                 s.songId,
                 s.title,
                 s.filePath,
@@ -163,7 +163,40 @@ router.delete('/:id', requireAuth, (req, res) => {
         console.error('Specific error deleting playlist:', error);
         res.status(500).json({ error: 'Could not delete playlist' });
     }
+})
 
+router.delete('/:id/songs/:songId', requireAuth, (req, res) => {
+    const playlistId = req.params.id;
+    const songId = req.params.songId;
+    const userId = req.session.userId;
+
+    try {
+        const checkQuery = `
+            SELECT playlistId FROM Playlists
+            WHERE playlistId = ? AND userId = ?
+        `;
+        const playlist = db.prepare(checkQuery).get(playlistId, userId);
+
+        if (!playlist) {
+            return res.status(404).json({ error: 'Playlist not found or unauthorized' })
+        }
+
+        const deleteQuery = `
+            DELETE From Playlists_Songs
+            WHERE PlaylistId = ? AND SongId = ?
+        `
+
+        const result = db.prepare(deleteQuery).run(playlistId, songId);
+
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Song not found in playlist' });
+        }
+
+        res.status(200).json({ message: 'Song removed from playlist successfully' })
+    } catch (error) {
+        console.error('Error removing song from playlist:', error);
+        res.status(500).json({ error: 'Could not remove song from playlist' });
+    }
 })
 
 export default router;

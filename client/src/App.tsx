@@ -8,10 +8,22 @@ import PlayList from './components/PlayList';
 import Sidebar from './components/Sidebar';
 import AuthenticationForm from './components/AuthenticationForm';
 
-//Interface defined for user state
+//Interface defined for user state and types for server objects
 interface User {
     userId: number,
     username?: string
+}
+
+interface ServerSong {
+    songId: number;
+    title: string;
+    filePath: string;
+}
+
+interface ServerPlaylist {
+    id: number;
+    name: string;
+    songs: { songId?: number; id?: number; title: string; filePath: string }[];
 }
 
 export default function App() {
@@ -63,7 +75,6 @@ export default function App() {
     //Playlist array for sidebar interaction
     const [playlists, setPlaylists] = useState<Playlist[]>([
         { id: 'library', name: 'All Uploads', songs: []},
-        { id: 'favorites', name: 'Favorites', songs: []},
     ]);
 
     /* ------------------------------------------------------------------ */
@@ -82,27 +93,60 @@ export default function App() {
     }
 
     //Fetch current tracks on refreshFlag state change to update 'library' bucket. Use user in dependency array for localized behavior
+    //Additionally call GET playlists for persistence
     useEffect(() => {
         if (!user) return;
         
         fetch('http://localhost:5000/api/songs', {
             credentials: 'include',
         })
-            .then((res) => res.json())
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error(`Songs requested failed: ${res.status}`);
+                }
+                return res.json();
+            })
             .then((data: { songs: ServerSong[] }) => {
-                const inFormatSongs: Song[] = data.songs.map((song) => ({
+                const rawSongs = data?.songs || [];
+                const inFormatSongs: Song[] = rawSongs.map((song) => ({
                     id: String(song.songId),
                     title: song.title,
                     duration: 0,
                     filePath: song.filePath
                 }));
 
-                setPlaylists((prev) => 
-                    prev.map((playlist) =>
-                        playlist.id === 'library' ? {...playlist, songs: inFormatSongs } : playlist
-                    )
-                );
-            })
+                //Fetch custom user DB playlists from backend
+                fetch('http://localhost:5000/api/playlists', {
+                    credentials: 'include',
+                })
+                    .then((res) => {
+                        if (!res.ok) {
+                            throw new Error(`Playlist request failed: ${res.status}`);
+                        }
+                        return res.json();
+                    })
+                    .then((playlistData: {playlists: ServerPlaylist[] }) => {
+                        const rawPlaylists = playlistData?.playlists || [];
+                        const customPlaylists: Playlist[] = rawPlaylists.map((pl) => {
+                            return {
+                                id: String(pl.id),
+                                name: pl.name,
+                                songs: (pl.songs || []).map((s) => ({
+                                    id: String(s.songId || s.id),
+                                    title: s.title,
+                                    duration: 0,
+                                    filePath: s.filePath
+                                }))
+                            };
+                        });
+
+                        setPlaylists([
+                        { id: 'library', name: 'All Uploads', songs: inFormatSongs },
+                        ...customPlaylists
+                        ]);
+                    })
+                    .catch((err) => console.error('Could not load custom playlists:', err));
+                })
 
             .catch((err) => console.error('Could not load library tracks:', err))
     }, [refreshFlag, user]);
@@ -150,54 +194,134 @@ export default function App() {
     }
 
     //Add to playlist onClick handler
-    const handleAddSongToPlaylist = (targetPlaylistId: string, addedSong: Song) => {
-        setPlaylists((prevPlaylists) => 
-            prevPlaylists.map((pl) => {
-                if (pl.id !== targetPlaylistId) return pl;
+    const handleAddSongToPlaylist = async (targetPlaylistId: string, addedSong: Song) => {
+        //If default upload bucket do not execute handler
+        if (targetPlaylistId === 'library') return;
+        
+        try {
+            //Fetch from backend
+            const res = await fetch(`http://localhost:5000/api/playlists/${targetPlaylistId}/songs`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ songId: addedSong.id })
+            });
 
-                if (pl.songs.some((s) => s.id === addedSong.id)) return pl;
+            if (!res.ok) {
+                console.error('Failed to add song to playlist on backend')
+                return;
+            }
 
-                return {
-                    ...pl,
-                    songs: [...pl.songs, addedSong]
-                };
-            })
-        );
+            //Update frontend state
+            setPlaylists((prevPlaylists) => 
+                prevPlaylists.map((pl) => {
+                    if (pl.id !== targetPlaylistId) return pl;
+
+                    if (pl.songs.some((s) => s.id === addedSong.id)) return pl;
+
+                    return {
+                        ...pl,
+                        songs: [...pl.songs, addedSong]
+                    };
+                })
+            );
+        } catch (err) {
+            console.error('Error adding song to playlist:', err);
+        }
     };
 
-    //Add remove from playlist handler.
-    const handleDeleteSongFromPlaylist = (playlistId: string, songId: string) => {
-        setPlaylists((prev) =>
-            prev.map((pl) => {
-                if (pl.id !== playlistId) return pl;
+    //Delete from playlist handler
+    const handleDeleteSongFromPlaylist = async (playlistId: string, songId: string) => {
+        if (playlistId === 'library') return
 
-                return {
-                    ...pl,
-                    songs: pl.songs.filter((song) => song.id !== songId),
-                };
-            })
-        );
+        try {
+        
+            const res = await fetch(`http://localhost:5000/api/playlists/${playlistId}/songs/${songId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (!res.ok) {
+                console.error('Failed to remove song from playlist on backend')
+                return;
+            }
+            
+            setPlaylists((prev) =>
+                prev.map((pl) => {
+                    if (pl.id !== playlistId) return pl;
+
+                    return {
+                        ...pl,
+                        songs: pl.songs.filter((song) => song.id !== songId),
+                    };
+                })
+            );
+        } catch (err) {
+            console.error('Error removing song from playlist:', err);
+        }
     };
 
     //Sidebar handler for adding playlists
-    const handleCreatePlaylist = (name: string) => {
-        const newPlaylist: Playlist = {
-            id: `playlist-${Date.now()}`, //unique generated per current time
-            name: name.trim(),
-            songs: [],
-        };
+    const handleCreatePlaylist = async (name: string) => {
+        try {
+            const res = await fetch(`http://localhost:5000/api/playlists`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ name }),
+            });
 
-        setPlaylists((prev) => [...prev, newPlaylist]);
+            if (!res.ok) {
+                console.error('Failed to create playlist on backend');
+                return;
+            }
+
+            const data: { playlistId: number, name: string } = await res.json();
+
+            const newPlaylist: Playlist = {
+                id: String(data.playlistId),
+                name: data.name,
+                songs: []
+            };
+
+            setPlaylists((prev) => [...prev, newPlaylist]);
+            setSelectedPlaylistId(String(data.playlistId));
+        } catch (err) {
+            console.error('Error creating playlist:', err);
+        }
     };
 
     //Sidebar handler for deleting playlists
-    const handleDeletePlaylist = (removeId: string) => {
-        if (removeId === 'library' || removeId === 'favorites') return;
-        
-        setPlaylists((prevPlaylists) => prevPlaylists.filter((pl) => pl.id !== removeId));
+    const handleDeletePlaylist = async (removeId: string) => {
 
-        if (selectedPlaylistId === removeId) {
-            setSelectedPlaylistId('library');
+        const targetPlaylist = playlists.find((pl) => pl.id === removeId)
+
+        if (removeId === 'library' || targetPlaylist?.name.toLocaleLowerCase() === 'favorites') return;
+        
+        try {
+            const res = await fetch(`http://localhost:5000/api/playlists/${removeId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            })
+
+            if (!res.ok) {
+                console.error('Failed to delete playlist on backend')
+                return;
+            }
+
+            //Change react state if successful
+            setPlaylists((prevPlaylists) => prevPlaylists.filter((pl) => pl.id !== removeId));
+
+            if (selectedPlaylistId === removeId) {
+                setSelectedPlaylistId('library');
+            }
+
+        } catch (err) {
+            console.error('Error deleting playlist:', err);
         }
     };
 
@@ -254,7 +378,7 @@ export default function App() {
                 //Set back to ordered sequence from current position in queue
                 if (currentSong) {
                     const currentIndex = activePlaylist.songs.findIndex((s) => s.id === currentSong.id);
-                    if (currentIndex !== 1) {
+                    if (currentIndex !== -1) {
                         setAutoplayQueue(activePlaylist.songs.slice(currentIndex));
                     }
                 }
