@@ -97,6 +97,73 @@ router.get('/', requireAuth, (req, res) => {
         console.error('Specific error when fetching playlists:', error);
         res.status(500).json({ error: 'Could not fetch playlists from database '});
     }
+});
+
+router.post('/:id/songs', requireAuth, (req, res) => {
+    const playlistId = req.params.id
+    const { songId } = req.body
+    const userId = req.session.userId
+
+    if (!songId) {
+        return res.status(400).json({ error: 'songId needed to execute' });
+    }
+
+    try {
+        const checkQuery = `
+            SELECT playlistId FROM Playlists
+            WHERE playlistId = ? AND userId = ?
+        `;
+        const playlist = db.prepare(checkQuery).get(playlistId, userId);
+
+        if (!playlist) {
+            return res.status(400).json({ error: 'Playlist not found or user not authenticated properly '});
+        }
+
+        const positioningQuery = `
+            SELECT COUNT(*) as count FROM Playlists_Songs WHERE playlistId = ?
+        `;
+        const result = db.prepare(positioningQuery).get(playlistId) as {count : number};
+        const nextPosition = result.count + 1;
+
+        const insertQuery = `
+            INSERT INTO Playlists_Songs (playlistId, songId, position)
+            VALUES (?, ?, ?)
+        `;
+        db.prepare(insertQuery).run(playlistId, songId, nextPosition);
+
+        res.status(201).json({ message: 'Song added to playlist successfully' });
+    } catch (error: any) {
+        if (error.code === `SQLITE_CONSTRAINT_PRIMARYKEY`) {
+            return res.status(400).json({ error: 'Song already exists in this playlist' });
+        }
+
+        console.error('Error adding song to playlist:', error);
+        res.status(500).json({ error: 'Could not add song to playlist' });
+    }
+});
+
+router.delete('/:id', requireAuth, (req, res) => {
+    const playlistId = req.params.id;
+    const userId = req.session.userId;
+
+    try {
+        const query = `
+            DELETE FROM Playlists
+            WHERE playlistId = ? AND userId = ?
+        `
+
+        const result = db.prepare(query).run(playlistId, userId);
+
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Playlist not found or user not authorized to delete playlist' })
+        }
+
+        res.status(200).json({ message: 'Playlist successfully deleted' });
+    } catch (error) {
+        console.error('Specific error deleting playlist:', error);
+        res.status(500).json({ error: 'Could not delete playlist' });
+    }
+
 })
 
 export default router;
