@@ -473,7 +473,7 @@ export default function App() {
                 </Sidebar>
 
                 <div className="main-block">
-                    <Header/>
+                    <Header userId={user?.userId ?? null} onLogout={handleLogout}/>
 
                     <p>Use this form to upload to 'All Uploads' playlist.</p>
                     <UploadForm onUploadSuccess={handleUploadSuccess} />
