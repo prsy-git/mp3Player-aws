@@ -8,74 +8,35 @@ import PlayList from './components/PlayList';
 import Sidebar from './components/Sidebar';
 import AuthenticationForm from './components/AuthenticationForm';
 
-//Interface defined for user state and types for server objects
-interface User {
-    userId: number,
-    username?: string
-}
-
-interface ServerSong {
-    songId: number;
-    title: string;
-    filePath: string;
-}
-
-interface ServerPlaylist {
-    id: number;
-    name: string;
-    songs: { songId?: number; id?: number; title: string; filePath: string }[];
-}
+//hooks
+import { useAuth } from './hooks/useAuth';
+import { useLibrary } from './hooks/useLibrary';
 
 export default function App() {
-    
-    /* --- Code dealing primarily with user authentication --- */
-    const [user, setUser] = useState<User | null>(null);
-    const [authenticationLoading, setAuthenticationLoading] = useState<boolean>(true);
 
-    // Check existing cookies
-    useEffect(() => {
-        fetch('http://localhost:5000/api/users/me', {
-            credentials: 'include'
-        })
-            .then((res) => {
-                if (res.ok) return res.json();
-                throw new Error('Not logged in');
-            })
-            .then((data) => setUser({ userId: data.userId, username: data.username }))
-            .catch(() => setUser(null))
-            .finally(() => setAuthenticationLoading(false));
-    }, []);
-
-    // Logout handler
-    const handleLogout = async () => {
-        try {
-            await fetch ('http://localhost:5000/api/users/logout', {
-                method: 'POST',
-                credentials: 'include'
-            });
-        } catch (err) {
-            console.error('Logout error', err)
-        } finally {
-            setUser(null)
-        }
-    }
-    
-    /* --- Code relevant to the function of general routing and handling for the app components --- */
-    
     //states to manage that are relevant for multiple components / across the app
     const [currentSong, setCurrentSong] = useState<Song | null>(null)
     const [refreshFlag, setRefreshFlag] = useState<number>(0);
     const [loopFlag, setLoopFlag] = useState<boolean>(false);
+    
+    //Hook declarations
+    const {
+        user,
+        setUser,
+        authenticationLoading,
+        handleLogout,
+    } = useAuth();
 
+    const {
+        playlists,
+        setPlaylists,
+    } = useLibrary(refreshFlag, user);
+    
+    /* --- Code relevant to the function of general routing and handling for the app components --- */
     /* --- Array / Queue Objects Needed for Implementation Across the App */
     
     //Queue for managing shuffle play functionality
     const [autoplayQueue, setAutoplayQueue] = useState<Song[]>([]);
-
-    //Playlist array for sidebar interaction
-    const [playlists, setPlaylists] = useState<Playlist[]>([
-        { id: 'library', name: 'All Uploads', songs: []},
-    ]);
 
     /* ------------------------------------------------------------------ */
 
@@ -84,72 +45,6 @@ export default function App() {
 
     //Active playlist object dervied from id
     const activePlaylist = playlists.find((p) => p.id === selectedPlaylistId) || playlists[0];
-
-    //Interface to match database structure for fetch useEffect
-    interface ServerSong {
-        songId: number;
-        title: string;
-        filePath: string;
-    }
-
-    //Fetch current tracks on refreshFlag state change to update 'library' bucket. Use user in dependency array for localized behavior
-    //Additionally call GET playlists for persistence
-    useEffect(() => {
-        if (!user) return;
-        
-        fetch('http://localhost:5000/api/songs', {
-            credentials: 'include',
-        })
-            .then((res) => {
-                if (!res.ok) {
-                    throw new Error(`Songs requested failed: ${res.status}`);
-                }
-                return res.json();
-            })
-            .then((data: { songs: ServerSong[] }) => {
-                const rawSongs = data?.songs || [];
-                const inFormatSongs: Song[] = rawSongs.map((song) => ({
-                    id: String(song.songId),
-                    title: song.title,
-                    duration: 0,
-                    filePath: song.filePath
-                }));
-
-                //Fetch custom user DB playlists from backend
-                fetch('http://localhost:5000/api/playlists', {
-                    credentials: 'include',
-                })
-                    .then((res) => {
-                        if (!res.ok) {
-                            throw new Error(`Playlist request failed: ${res.status}`);
-                        }
-                        return res.json();
-                    })
-                    .then((playlistData: {playlists: ServerPlaylist[] }) => {
-                        const rawPlaylists = playlistData?.playlists || [];
-                        const customPlaylists: Playlist[] = rawPlaylists.map((pl) => {
-                            return {
-                                id: String(pl.id),
-                                name: pl.name,
-                                songs: (pl.songs || []).map((s) => ({
-                                    id: String(s.songId || s.id),
-                                    title: s.title,
-                                    duration: 0,
-                                    filePath: s.filePath
-                                }))
-                            };
-                        });
-
-                        setPlaylists([
-                        { id: 'library', name: 'All Uploads', songs: inFormatSongs },
-                        ...customPlaylists
-                        ]);
-                    })
-                    .catch((err) => console.error('Could not load custom playlists:', err));
-                })
-
-            .catch((err) => console.error('Could not load library tracks:', err))
-    }, [refreshFlag, user]);
 
     //Backend delete for playlist items handler updated to utilize database ID
     const handleDeleteSong = async (songId: string) => {
