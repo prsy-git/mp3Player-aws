@@ -143,3 +143,11 @@ dist
 db/*.db
 db/*.db-shm
 db/*.db-wal
+
+#Additional check
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
