@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import multer from 'multer';
+import 'dotenv/config';
 import path from 'path';
 import fs from 'fs';
 import SqliteStoreInit from 'better-sqlite3-session-store';
@@ -9,15 +9,20 @@ import db from './db/db.js';
 
 const app = express();
 const SqliteStore = SqliteStoreInit(session);
-const PORT = 5000;
+const PORT = Number(process.env.PORT || 5000);
 
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: 'process.env.CLIENT_ORIGIN || http://localhost:5173',
     credentials: true
 }))
 app.use(express.json());
 
 //--- Configuration for session middleware
+const sessionSecret = process.env.SESSION_SECRET
+if (!sessionSecret) {
+    throw new Error('SESSION_SECRET not configured in .env');
+}
+
 app.use(
     session({
         store: new SqliteStore({
@@ -27,7 +32,7 @@ app.use(
                 intervalMs: 900000,
             },
         }),
-        secret: 'placeholder-test-key-to-be-replaced-by-env-var',
+        secret: sessionSecret,
         resave: false,
         saveUninitialized: false,
         cookie: {
@@ -43,21 +48,6 @@ app.use(
 import userRoutes from './routes/users.js';
 import songRoutes from './routes/songs.js';
 import playlistRoutes from './routes/playlists.js';
-
-//multer file upload handling
-// const fileStorage = multer.diskStorage({
-//     destination: (req, file, cb) => {
-//         cb(null, 'uploads/')
-//     },
-
-//     filename: (req, file, cb) => {
-//         const originalName = file.originalname
-//         const cleanedName = originalName.replaceAll(' ', '');
-//         cb(null, cleanedName)
-//     }
-// })
-
-// const upload = multer({ storage: fileStorage });
 
 //Serve audio files from uploads folder to client tier
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));

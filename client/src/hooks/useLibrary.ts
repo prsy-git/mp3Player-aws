@@ -28,6 +28,7 @@ export function useLibrary(refreshFlag: number, user: unknown) {
         },
     ]);
 
+    //GET songs useEffect
     useEffect(() => {
             if (!user) return;
             
@@ -87,35 +88,73 @@ export function useLibrary(refreshFlag: number, user: unknown) {
                 .catch((err) => console.error('Could not load library tracks:', err))
     }, [refreshFlag, user]);
 
-    //Backend delete for playlist items handler updated to utilize database ID
-    const handleDeleteSong = async (songId: string) => {
+    //Add to playlist onClick handler
+    const handleAddSongToPlaylist = async (targetPlaylistId: string, addedSong: Song) => {
+        //If default upload bucket do not execute handler
+        if (targetPlaylistId === 'library') return;
+        
         try {
-            const res = await fetch(`http://localhost:5000/api/songs/${songId}`, {
+            //Fetch from backend
+            const res = await fetch(`http://localhost:5000/api/playlists/${targetPlaylistId}/songs`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ songId: addedSong.id })
+            });
+
+            if (!res.ok) {
+                console.error('Failed to add song to playlist on backend')
+                return;
+            }
+
+            //Update frontend state
+            setPlaylists((prevPlaylists) => 
+                prevPlaylists.map((pl) => {
+                    if (pl.id !== targetPlaylistId) return pl;
+
+                    if (pl.songs.some((s) => s.id === addedSong.id)) return pl;
+
+                    return {
+                        ...pl,
+                        songs: [...pl.songs, addedSong]
+                    };
+                })
+            );
+        } catch (err) {
+            console.error('Error adding song to playlist:', err);
+        }
+    };
+
+    //Delete from playlist handler
+    const handleDeleteSongFromPlaylist = async (playlistId: string, songId: string) => {
+        if (playlistId === 'library') return
+
+        try {
+        
+            const res = await fetch(`http://localhost:5000/api/playlists/${playlistId}/songs/${songId}`, {
                 method: 'DELETE',
                 credentials: 'include'
             });
 
-            if (res.ok) {
-
-                if (currentSong?.id == songId) {
-                    setCurrentSong(null);
-                }
-
-                setPlaylists((prev) => 
-                    prev.map((playlist) => ({
-                        ...playlist,
-                        songs: playlist.songs.filter((song) => song.id !== songId),
-                    }))
-                );
+            if (!res.ok) {
+                console.error('Failed to remove song from playlist on backend')
+                return;
             }
+            
+            setPlaylists((prev) =>
+                prev.map((pl) => {
+                    if (pl.id !== playlistId) return pl;
 
-            else {
-                console.error('Failed to delete track from backend server.');
-            }
-        }
-
-        catch(err) {
-            console.error('Error deleting track', err);
+                    return {
+                        ...pl,
+                        songs: pl.songs.filter((song) => song.id !== songId),
+                    };
+                })
+            );
+        } catch (err) {
+            console.error('Error removing song from playlist:', err);
         }
     };
 
@@ -123,6 +162,8 @@ export function useLibrary(refreshFlag: number, user: unknown) {
         songs,
         setSongs,
         playlists,
-        setPlaylists
+        setPlaylists,
+        handleAddSongToPlaylist,
+        handleDeleteSongFromPlaylist
     };
 }

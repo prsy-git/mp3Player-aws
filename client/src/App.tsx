@@ -30,6 +30,8 @@ export default function App() {
     const {
         playlists,
         setPlaylists,
+        handleAddSongToPlaylist,
+        handleDeleteSongFromPlaylist
     } = useLibrary(refreshFlag, user);
     
     /* --- Code relevant to the function of general routing and handling for the app components --- */
@@ -46,7 +48,78 @@ export default function App() {
     //Active playlist object dervied from id
     const activePlaylist = playlists.find((p) => p.id === selectedPlaylistId) || playlists[0];
 
-    //Backend delete for playlist items handler updated to utilize database ID
+    
+    //Add to playlist onClick handler -- DEPRECATED AFTER MOVING HOOK
+    // const handleAddSongToPlaylist = async (targetPlaylistId: string, addedSong: Song) => {
+    //     //If default upload bucket do not execute handler
+    //     if (targetPlaylistId === 'library') return;
+        
+    //     try {
+    //         //Fetch from backend
+    //         const res = await fetch(`http://localhost:5000/api/playlists/${targetPlaylistId}/songs`, {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //             },
+    //             credentials: 'include',
+    //             body: JSON.stringify({ songId: addedSong.id })
+    //         });
+
+    //         if (!res.ok) {
+    //             console.error('Failed to add song to playlist on backend')
+    //             return;
+    //         }
+
+    //         //Update frontend state
+    //         setPlaylists((prevPlaylists) => 
+    //             prevPlaylists.map((pl) => {
+    //                 if (pl.id !== targetPlaylistId) return pl;
+
+    //                 if (pl.songs.some((s) => s.id === addedSong.id)) return pl;
+
+    //                 return {
+    //                     ...pl,
+    //                     songs: [...pl.songs, addedSong]
+    //                 };
+    //             })
+    //         );
+    //     } catch (err) {
+    //         console.error('Error adding song to playlist:', err);
+    //     }
+    // };
+
+    //Delete from playlist handler -- DEPRECATED AFTER MOVING TO HOOK
+    // const handleDeleteSongFromPlaylist = async (playlistId: string, songId: string) => {
+    //     if (playlistId === 'library') return
+
+    //     try {
+        
+    //         const res = await fetch(`http://localhost:5000/api/playlists/${playlistId}/songs/${songId}`, {
+    //             method: 'DELETE',
+    //             credentials: 'include'
+    //         });
+
+    //         if (!res.ok) {
+    //             console.error('Failed to remove song from playlist on backend')
+    //             return;
+    //         }
+            
+    //         setPlaylists((prev) =>
+    //             prev.map((pl) => {
+    //                 if (pl.id !== playlistId) return pl;
+
+    //                 return {
+    //                     ...pl,
+    //                     songs: pl.songs.filter((song) => song.id !== songId),
+    //                 };
+    //             })
+    //         );
+    //     } catch (err) {
+    //         console.error('Error removing song from playlist:', err);
+    //     }
+    // };
+
+    // Backend delete for playlist items handler updated to utilize database ID
     const handleDeleteSong = async (songId: string) => {
         try {
             const res = await fetch(`http://localhost:5000/api/songs/${songId}`, {
@@ -55,107 +128,32 @@ export default function App() {
             });
 
             if (res.ok) {
-
                 if (currentSong?.id == songId) {
                     setCurrentSong(null);
                 }
 
-                setPlaylists((prev) => 
+                setPlaylists((prev) =>
                     prev.map((playlist) => ({
                         ...playlist,
                         songs: playlist.songs.filter((song) => song.id !== songId),
                     }))
                 );
-            }
-
-            else {
+            } else {
                 console.error('Failed to delete track from backend server.');
             }
-        }
-
-        catch(err) {
+        } catch (err) {
             console.error('Error deleting track', err);
         }
     };
 
-    //Upload success increment handler for useEffect
+    // Refresh library after a successful upload
     const handleUploadSuccess = () => {
         setRefreshFlag((prev) => prev + 1);
     };
 
-    //Loop toggle handler
+    // Toggle loop playback
     const toggleLoop = () => {
         setLoopFlag((prev) => !prev);
-    }
-
-    //Add to playlist onClick handler
-    const handleAddSongToPlaylist = async (targetPlaylistId: string, addedSong: Song) => {
-        //If default upload bucket do not execute handler
-        if (targetPlaylistId === 'library') return;
-        
-        try {
-            //Fetch from backend
-            const res = await fetch(`http://localhost:5000/api/playlists/${targetPlaylistId}/songs`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({ songId: addedSong.id })
-            });
-
-            if (!res.ok) {
-                console.error('Failed to add song to playlist on backend')
-                return;
-            }
-
-            //Update frontend state
-            setPlaylists((prevPlaylists) => 
-                prevPlaylists.map((pl) => {
-                    if (pl.id !== targetPlaylistId) return pl;
-
-                    if (pl.songs.some((s) => s.id === addedSong.id)) return pl;
-
-                    return {
-                        ...pl,
-                        songs: [...pl.songs, addedSong]
-                    };
-                })
-            );
-        } catch (err) {
-            console.error('Error adding song to playlist:', err);
-        }
-    };
-
-    //Delete from playlist handler
-    const handleDeleteSongFromPlaylist = async (playlistId: string, songId: string) => {
-        if (playlistId === 'library') return
-
-        try {
-        
-            const res = await fetch(`http://localhost:5000/api/playlists/${playlistId}/songs/${songId}`, {
-                method: 'DELETE',
-                credentials: 'include'
-            });
-
-            if (!res.ok) {
-                console.error('Failed to remove song from playlist on backend')
-                return;
-            }
-            
-            setPlaylists((prev) =>
-                prev.map((pl) => {
-                    if (pl.id !== playlistId) return pl;
-
-                    return {
-                        ...pl,
-                        songs: pl.songs.filter((song) => song.id !== songId),
-                    };
-                })
-            );
-        } catch (err) {
-            console.error('Error removing song from playlist:', err);
-        }
     };
 
     //Sidebar handler for adding playlists
@@ -251,6 +249,8 @@ export default function App() {
             }
         }
     };
+
+    
 
     //Handler for populating queue on a shuffle operation
     const toggleShuffle = () => {
