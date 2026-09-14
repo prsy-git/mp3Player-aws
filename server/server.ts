@@ -7,9 +7,29 @@ import SqliteStoreInit from 'better-sqlite3-session-store';
 import session from 'express-session';
 import db from './db/db.js';
 
+//Aurora testing imports
+import pool from './db/postgres.js';
+
 const app = express();
 const SqliteStore = SqliteStoreInit(session);
 const PORT = Number(process.env.PORT || 5000);
+
+//Aurora testing connection function
+async function testPostgresConnection() {
+    try {
+        const result = await pool.query(`
+            SELECT
+                NOW() AS current_time,
+                current_database() AS database_name,
+                current_user AS database_user    
+        `);
+
+        console.log('PostgreSQL connection succeeded', result.rows[0]);
+    } catch (error) {
+        console.error('PostgreSQL connection failed:', error);
+        process.exit(1);
+    }
+}
 
 app.use(cors({
     origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
@@ -110,6 +130,16 @@ app.use('/api/users', userRoutes);
 app.use('/api/songs', songRoutes);
 app.use('/api/playlists', playlistRoutes);
 
-app.listen(PORT, () => {
-    console.log(`Server listening on http://localhost:${PORT}`);
-})
+// app.listen(PORT, () => {
+//     console.log(`Server listening on http://localhost:${PORT}`);
+// })
+
+async function startServer() {
+    await testPostgresConnection();
+
+    app.listen(PORT, () => {
+        console.log(`Server listening on http://localhost:${PORT}`);
+    });
+}
+
+startServer();
