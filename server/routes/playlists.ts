@@ -51,6 +51,7 @@ router.get('/', requireAuth, (req, res) => {
             LEFT JOIN Playlists_Songs ps ON pl.playlistId = ps.playlistId
             LEFT JOIN Songs s ON ps.songId = s.songId
             WHERE pl.userId = ?
+            ORDER BY pl.playlistId, ps.position
         `
 
         //Type interface for row from SQL JOIN
@@ -117,6 +118,18 @@ router.post('/:id/songs', requireAuth, (req, res) => {
 
         if (!playlist) {
             return res.status(400).json({ error: 'Playlist not found or user not authenticated properly '});
+        }
+
+        const songOwnershipQuery = `
+            SELECT songId
+            FROM Songs
+            WHERE songId = ? AND uploadingUser = ?
+        `;
+
+        const song = db.prepare(songOwnershipQuery).get(songId, userId);
+
+        if (!song) {
+            return res.status(404).json({ error: 'Song not found or authorization not complete '});
         }
 
         const positioningQuery = `

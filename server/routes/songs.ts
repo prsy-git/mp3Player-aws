@@ -1,9 +1,10 @@
 import {Router} from 'express';
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
+import fs from 'fs/promises';
 import db from '../db/db.js';
 import {requireAuth} from '../middleware/auth.js';
+import { randomUUID } from 'crypto';
 
 const router = Router();
 
@@ -14,17 +15,19 @@ const fileStorage = multer.diskStorage({
     },
 
     filename: (req, file, cb) => {
-        const originalName = file.originalname
-        const cleanedName = originalName.replaceAll(' ', '');
-        cb(null, cleanedName)
+        const extension = path.extname(file.originalname);
+        const uniqueFilename = `${randomUUID()}${extension}`;
+        cb(null, uniqueFilename);
     }
 });
 
 const upload = multer({ storage: fileStorage });
 
-router.post('/upload', requireAuth, upload.single('file'), (req, res) => {
+router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
     if (!req.file) {
-        return res.status(400).json({ error: 'No file passed to backend' });
+        return res.status(400).json({
+            error: 'No file passed to backend'
+        });
     }
 
     const title = req.body.title || req.file.originalname;
@@ -36,17 +39,37 @@ router.post('/upload', requireAuth, upload.single('file'), (req, res) => {
             INSERT INTO Songs (title, filePath, uploadingUser)
             VALUES (?, ?, ?)
         `;
-        const statement = db.prepare(query);
-        const result = statement.run(title, filepath, uploadingUser);
 
-        res.status(201).json({ 
-            message: ' File successfully uploaded ',
+        const statement = db.prepare(query);
+        const result = statement.run(
+            title,
+            filepath,
+            uploadingUser
+        );
+
+        return res.status(201).json({
+            message: 'File successfully uploaded',
             songId: result.lastInsertRowid,
             filename: req.file.filename
         });
     } catch (error) {
-        console.error('Specific database error on file upload attempt: ', error);
-        res.status(500).json({ error: 'Could not upload song in database' });
+        console.error(
+            'Specific database error on file upload attempt:',
+            error
+        );
+
+        try {
+            await fs.unlink(req.file.path);
+        } catch (cleanupError) {
+            console.error(
+                'Database insert failed and uploaded file cleanup also failed:',
+                cleanupError
+            );
+        }
+
+        return res.status(500).json({
+            error: 'Could not upload song in database'
+        });
     }
 });
 
@@ -69,7 +92,7 @@ router.get('/', requireAuth, (req, res) => {
     }
 });
 
-router.delete('/:id', requireAuth, (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
     const songId = req.params.id;
     const uploadingUser = req.session.userId;
 
@@ -101,11 +124,15 @@ router.delete('/:id', requireAuth, (req, res) => {
         const relativePath = song.filePath?.startsWith('/') ? song.filePath.slice(1) : song.filePath;
         const absolutePath = path.join(process.cwd(), relativePath);
 
-        fs.unlink(absolutePath, (err) => {
-            if (err) {
-                console.warn(`Row removed, but files not deleted from upload bucket / backend at ${absolutePath}`);
+        try {
+            await fs.unlink(absolutePath);
+        } catch (error: any) {
+            if (error.code === 'ENOENT') {
+                console.warn(`Audio file already not present in database: ${absolutePath}`);
+            } else {
+                console.error(`Song record deleted but audio file not detected at: ${absolutePath}`, error);
             }
-        });
+        }
 
         res.status(200).json({ message: 'Song deleted'});
     }   catch (error) {

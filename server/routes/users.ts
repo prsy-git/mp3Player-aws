@@ -18,8 +18,10 @@ router.post('/register-user', async (req, res) => {
             VALUES (?, ?, ?)
         `;
 
-        const statement = db.prepare(query);
-        const result = statement.run(username, hashedPassword, email || null);
+        const registerUser = db.transaction(() => {
+            const statement = db.prepare(query);
+            const result = statement.run(username, hashedPassword, email || null);
+        
 
         //On registration, instantiate the Favorites playlist on database for persistence
         const createFavQuery = `
@@ -27,6 +29,11 @@ router.post('/register-user', async (req, res) => {
             VALUES (?, ?)
         `;
         db.prepare(createFavQuery).run('Favorites', result.lastInsertRowid);
+
+        return result;
+        })
+
+        const result = registerUser();
 
         res.status(201).json({
             message: 'User created successfully',

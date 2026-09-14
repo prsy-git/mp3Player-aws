@@ -12,6 +12,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@aws-sdk/rds-signer": "^3.1131.0",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^13.0.3",
     "better-sqlite3-session-store": "^0.1.0",
@@ -19,7 +20,8 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
-    "multer": "^2.2.0"
+    "multer": "^2.2.0",
+    "pg": "^8.23.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -29,6 +31,7 @@
     "@types/express-session": "^1.19.0",
     "@types/multer": "^2.2.0",
     "@types/node": "^26.2.0",
+    "@types/pg": "^8.23.1",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2"
   }
