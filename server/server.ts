@@ -65,9 +65,9 @@ app.use(
 );
 
 //--- SQL Route Imports
-import userRoutes from './routes/users.js';
-import songRoutes from './routes/songs.js';
-import playlistRoutes from './routes/playlists.js';
+import userRoutes from './routes/users-postgres.js';
+import songRoutes from './routes/songs-postgres.js';;
+import playlistRoutes from './routes/playlists-postgres.js';
 
 //Serve audio files from uploads folder to client tier
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
