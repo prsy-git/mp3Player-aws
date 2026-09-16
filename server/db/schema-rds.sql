@@ -1,0 +1,30 @@
+CREATE TABLE IF NOT EXISTS Users (
+    userId SERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    passwordHash VARCHAR(255) NOT NULL,
+    email VARCHAR(50) UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS Playlists (
+    playlistId SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    userId INTEGER NOT NULL,
+    FOREIGN KEY (userId) REFERENCES Users(userId) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Songs (
+    songId SERIAL PRIMARY KEY,
+    title VARCHAR(100) NOT NULL,
+    filePath VARCHAR(255) NOT NULL,
+    uploadingUser INTEGER NOT NULL,
+    FOREIGN KEY (uploadingUser) REFERENCES Users(userId) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Playlists_Songs (
+    playlistId INTEGER,
+    songId INTEGER,
+    position INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (playlistId, songId),
+    FOREIGN KEY (playlistId) REFERENCES Playlists(playlistId) ON DELETE CASCADE,
+    FOREIGN KEY (songId) REFERENCES Songs(songId) ON DELETE CASCADE
+);

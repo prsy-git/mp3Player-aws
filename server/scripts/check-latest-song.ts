@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import pool from '../db/postgres.js';
+import pool from '../archive/postgres.js';
 
 async function checkLatestSong() {
     try {

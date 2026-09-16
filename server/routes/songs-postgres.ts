@@ -10,7 +10,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-import pool from '../db/postgres.js';
+import pool from '../db/rds-postgres.js';
 import { requireAuth } from '../middleware/auth.js';
 import s3, { S3_BUCKET_NAME } from '../storage/s3.js';
 

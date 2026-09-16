@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import pool from '../db/postgres.js';
+import pool from '../archive/postgres.js';
 
 async function initializePostgres() {
     const schemaPath = path.resolve(

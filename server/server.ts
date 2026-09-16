@@ -8,7 +8,7 @@ import session from 'express-session';
 import db from './db/db.js';
 
 //Aurora testing imports
-import pool from './db/postgres.js';
+import pool from './archive/postgres.js';
 
 const app = express();
 const SqliteStore = SqliteStoreInit(session);

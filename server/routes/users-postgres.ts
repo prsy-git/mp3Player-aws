@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import { PoolClient } from 'pg';
-import pool from '../db/postgres.js';
+import pool from '../db/rds-postgres.js';
 
 const router = Router();
 
