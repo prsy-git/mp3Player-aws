@@ -3,7 +3,12 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
 import { randomUUID } from 'crypto';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
+import {
+    DeleteObjectCommand,
+    GetObjectCommand,
+    PutObjectCommand
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 import pool from '../db/postgres.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -134,15 +139,67 @@ router.get('/', requireAuth, async (req, res) => {
     }
 });
 
+//Signed URL generator for played song
+router.get('/:id/play', requireAuth, async (req, res) => {
+    const songId = req.params.id;
+    const uploadingUser = req.session.userId;
+
+    try {
+        const result = await pool.query(
+            `
+            SELECT
+                filePath AS "filePath"
+            FROM Songs
+            WHERE songId = $1
+             AND uploadingUser = $2
+            `,
+            [songId, uploadingUser]
+        );
+
+        const song = result.rows[0] as 
+            | { filePath: string}
+            | undefined;
+
+        if (!song) {
+            return res.status(404).json({
+                error: 'Song not found or not authorized'
+            });
+        }
+
+        const signedUrl = await getSignedUrl(
+            s3,
+            new GetObjectCommand({
+                Bucket: S3_BUCKET_NAME,
+                Key: song.filePath
+            }),
+            {
+                expiresIn: 60 * 15
+            }
+        );
+
+        return res.status(200).json({
+            url: signedUrl
+        });
+    } catch (error) {
+        console.error('Error generating playback URL:', error);
+
+        return res.status(500).json({
+            error: 'Could not generate playback URL'
+        });
+    }
+});
+
 // Delete a song owned by the authenticated user
 router.delete('/:id', requireAuth, async (req, res) => {
     const songId = req.params.id;
     const uploadingUser = req.session.userId;
 
     try {
+        // Find song and verify ownership
         const selectResult = await pool.query(
             `
-            SELECT filePath
+            SELECT
+                filePath AS "filePath"
             FROM Songs
             WHERE songId = $1
               AND uploadingUser = $2
@@ -151,15 +208,24 @@ router.delete('/:id', requireAuth, async (req, res) => {
         );
 
         const song = selectResult.rows[0] as
-            | { filepath: string }
+            | { filePath: string }
             | undefined;
 
         if (!song) {
             return res.status(404).json({
-                error: 'Song not found or not authorized to retrieve song'
+                error: 'Song not found or not authorized'
             });
         }
 
+        // Delete the object from private S3
+        await s3.send(
+            new DeleteObjectCommand({
+                Bucket: S3_BUCKET_NAME,
+                Key: song.filePath
+            })
+        );
+
+        // Delete the record from Aurora PostgreSQL
         const deleteResult = await pool.query(
             `
             DELETE FROM Songs
@@ -175,40 +241,16 @@ router.delete('/:id', requireAuth, async (req, res) => {
             });
         }
 
-        const relativePath = song.filepath?.startsWith('/')
-            ? song.filepath.slice(1)
-            : song.filepath;
-
-        const absolutePath = path.join(
-            process.cwd(),
-            relativePath
-        );
-
-        try {
-            await fs.unlink(absolutePath);
-        } catch (error: any) {
-            if (error.code === 'ENOENT') {
-                console.warn(
-                    `Audio file already not present: ${absolutePath}`
-                );
-            } else {
-                console.error(
-                    `Song record deleted but audio file could not be deleted: ${absolutePath}`,
-                    error
-                );
-            }
-        }
-
-        res.status(200).json({
+        return res.status(200).json({
             message: 'Song deleted'
         });
     } catch (error) {
         console.error(
-            'Database error deleting song:',
+            'Error deleting song from S3 or PostgreSQL:',
             error
         );
 
-        res.status(500).json({
+        return res.status(500).json({
             error: 'Could not delete song'
         });
     }

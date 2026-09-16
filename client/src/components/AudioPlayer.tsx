@@ -37,20 +37,28 @@ export default function AudioPlayer({
     const [currentTime, setCurrentTime] = useState<number>(0);
     const [volume, setVolume] = useState<number>(1);
 
+    //states for playback URL
+    const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
+    const [isLoadingAudio, setIsLoadingAudio] = useState<boolean>(false);
+
     //handler function to set play state
-    const changePlayState = () => {
-        if (!audioReference.current) return; //is null value for reference
+    const changePlayState = async () => {
+        if (!audioReference.current || !playbackUrl) return;
 
         if (isPlaying) {
             audioReference.current.pause();
+            setPlaying(false);
         } else {
-            audioReference.current.play();
+            try {
+                await audioReference.current.play();
+                setPlaying(true);
+            } catch (err) {
+                console.error('Could not play audio:', err);
+            }
         }
-        
-        setPlaying(prev => !prev);
-    }
+    };
 
-    //handler function to update state and volume in <audio>
+    // Handler function to update volume state and audio element
     const changeVolume = (newVolume: number) => {
         setVolume(newVolume);
 
@@ -59,24 +67,59 @@ export default function AudioPlayer({
         }
     };
 
-    //useEffect for autoplay on song click
-    useEffect (() => {
-        // Control old timestamps on track switch
-        setCurrentTime(0);
-        setDuration(0);
-        setPlaying(false);
-        
-        //update only when currentSong is not null
-        if (currentSong && audioReference.current) {
-            audioReference.current.play()
+    //fetch a signed S3 URL when selected song changes
+    useEffect(() => {
+    setCurrentTime(0);
+    setDuration(0);
+    setPlaying(false);
+    setPlaybackUrl(null);
+
+    if (!currentSong) return;
+
+    const fetchPlaybackUrl = async () => {
+        setIsLoadingAudio(true);
+
+        try {
+            const res = await fetch(
+                `http://localhost:5000/api/songs/${currentSong.id}/play`,
+                {
+                    credentials: 'include',
+                }
+            );
+
+            if (!res.ok) {
+                throw new Error(
+                    `Playback URL request failed: ${res.status}`
+                );
+            }
+
+            const data: { url: string } = await res.json();
+
+            setPlaybackUrl(data.url);
+        } catch (err) {
+            console.error('Could not get playback URL:', err);
+        } finally {
+            setIsLoadingAudio(false);
+        }};
+        fetchPlaybackUrl();
+    }, [currentSong]);
+
+    // Attempt autoplay after the signed URL has been loaded
+    useEffect(() => {
+        if (!playbackUrl || !audioReference.current) return;
+
+        audioReference.current
+            .play()
             .then(() => {
                 setPlaying(true);
             })
             .catch((err) => {
-                console.error("Failed automatic play via useEffect onClick", err);
-            })
-        }
-    }, [currentSong])
+                console.error(
+                    'Automatic playback was blocked or failed:',
+                    err
+                );
+            });
+    }, [playbackUrl]);
 
     //useEffect for loop on current audioReference
     useEffect (() => {
@@ -95,7 +138,7 @@ export default function AudioPlayer({
                         <audio 
                             ref={audioReference}
                             crossOrigin="anonymous"
-                            src={`http://localhost:5000${currentSong.filePath}`}
+                            src={playbackUrl ?? undefined}
                             onLoadedMetadata={(e) => {
                                 const audioDuration = e.currentTarget.duration;
                                 if (Number.isFinite(audioDuration)) {
@@ -171,8 +214,12 @@ export default function AudioPlayer({
                                     Prev
                                 </button>
 
-                                <button type="button" onClick={(changePlayState)}>
-                                    {isPlaying ? 'Pause' : 'Play'}
+                                <button
+                                    type="button"
+                                    onClick={changePlayState}
+                                    disabled={isLoadingAudio || !playbackUrl}
+                                >
+                                    {isLoadingAudio ? 'Loading...' : isPlaying ? 'Pause' : 'Play'}
                                 </button>
 
                                 <button type="button" onClick={onNext} disabled={!hasNext}>

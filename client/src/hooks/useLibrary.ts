@@ -19,7 +19,7 @@ interface ServerPlaylist {
 }
 
 export function useLibrary(refreshFlag: number, user: unknown) {
-    const [songs, setSongs] = useState<Song[]>();
+    const [songs, setSongs] = useState<Song[]>([]);
     const [playlists, setPlaylists] = useState<Playlist[]>([
         {
             id: 'library',
@@ -30,62 +30,67 @@ export function useLibrary(refreshFlag: number, user: unknown) {
 
     //GET songs useEffect
     useEffect(() => {
-            if (!user) return;
-            
-            fetch('http://localhost:5000/api/songs', {
-                credentials: 'include',
+        console.log('useLibrary effect:', {
+        refreshFlag,
+        user,
+        });
+    
+        if (!user) return;
+        
+        fetch('http://localhost:5000/api/songs', {
+            credentials: 'include',
+        })
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error(`Songs requested failed: ${res.status}`);
+                }
+                return res.json();
             })
-                .then((res) => {
-                    if (!res.ok) {
-                        throw new Error(`Songs requested failed: ${res.status}`);
-                    }
-                    return res.json();
-                })
-                .then((data: { songs: ServerSong[] }) => {
-                    const rawSongs = data?.songs || [];
-                    const inFormatSongs: Song[] = rawSongs.map((song) => ({
-                        id: String(song.songId),
-                        title: song.title,
-                        duration: 0,
-                        filePath: song.filePath
-                    }));
+            .then((data: { songs: ServerSong[] }) => {
+                const rawSongs = data?.songs || [];
+                const inFormatSongs: Song[] = rawSongs.map((song) => ({
+                    id: String(song.songId),
+                    title: song.title,
+                    duration: 0,
+                    filePath: song.filePath
+                }));
 
-                    setSongs(inFormatSongs);
-    
-                    //Fetch custom user DB playlists from backend
-                    fetch('http://localhost:5000/api/playlists', {
-                        credentials: 'include',
-                    })
-                        .then((res) => {
-                            if (!res.ok) {
-                                throw new Error(`Playlist request failed: ${res.status}`);
-                            }
-                            return res.json();
-                        })
-                        .then((playlistData: {playlists: ServerPlaylist[] }) => {
-                            const rawPlaylists = playlistData?.playlists || [];
-                            const customPlaylists: Playlist[] = rawPlaylists.map((pl) => {
-                                return {
-                                    id: String(pl.id),
-                                    name: pl.name,
-                                    songs: (pl.songs || []).map((s) => ({
-                                        id: String(s.songId || s.id),
-                                        title: s.title,
-                                        duration: 0,
-                                        filePath: s.filePath
-                                    }))
-                                };
-                            });
-    
-                            setPlaylists([
-                            { id: 'library', name: 'All Uploads', songs: inFormatSongs },
-                            ...customPlaylists
-                            ]);
-                        })
-                        .catch((err) => console.error('Could not load custom playlists:', err));
+                setSongs(inFormatSongs);
+
+                //Fetch custom user DB playlists from backend
+                fetch('http://localhost:5000/api/playlists', {
+                    credentials: 'include',
                 })
-    
-                .catch((err) => console.error('Could not load library tracks:', err))
+                    .then((res) => {
+                        if (!res.ok) {
+                            throw new Error(`Playlist request failed: ${res.status}`);
+                        }
+                        return res.json();
+                    })
+                    .then((playlistData: {playlists: ServerPlaylist[] }) => {
+                        const rawPlaylists = playlistData?.playlists || [];
+                        const customPlaylists: Playlist[] = rawPlaylists.map((pl) => {
+                            return {
+                                id: String(pl.id),
+                                name: pl.name,
+                                songs: (pl.songs || []).map((s) => ({
+                                    id: String(s.songId || s.id),
+                                    title: s.title,
+                                    duration: 0,
+                                    filePath: s.filePath
+                                }))
+                            };
+                        });
+
+                        setPlaylists([
+                        { id: 'library', name: 'All Uploads', songs: inFormatSongs },
+                        ...customPlaylists
+                        ]);
+                    })
+                    .catch((err) => console.error('Could not load custom playlists:', err));
+            })
+
+            .catch((err) => console.error('Could not load library tracks:', err))
     }, [refreshFlag, user]);
 
     //Add to playlist onClick handler
