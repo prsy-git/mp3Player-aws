@@ -3,16 +3,12 @@ import cors from 'cors';
 import 'dotenv/config';
 import path from 'path';
 import fs from 'fs';
-import SqliteStoreInit from 'better-sqlite3-session-store';
 import session from 'express-session';
-import db from './db/db.js';
-
-//Aurora testing imports
-import pool from './archive/postgres.js';
+import connectPgSimple from 'connect-pg-simple';
+import pool from './db/rds-postgres.js';
 
 const app = express();
-const SqliteStore = SqliteStoreInit(session);
-const PORT = Number(process.env.PORT || 5000);
+const PORT = Number(process.env.PORT || 8080);
 
 //Aurora testing connection function
 async function testPostgresConnection() {
@@ -43,14 +39,14 @@ if (!sessionSecret) {
     throw new Error('SESSION_SECRET not configured in .env');
 }
 
+const PgSession = connectPgSimple(session);
+
 app.use(
     session({
-        store: new SqliteStore({
-            client: db,
-            expired: {
-                clear: true,
-                intervalMs: 900000,
-            },
+        store: new PgSession({
+            pool,
+            tableName: 'user_sessions',
+            createTableIfMissing: true,
         }),
         secret: sessionSecret,
         resave: false,

@@ -151,3 +151,6 @@ db/*.db-wal
 *.sqlite
 *.sqlite3
 
+#Exception for beanstalk deployment
+!server/dist/
+!server/dist/**
