@@ -4,7 +4,7 @@ export default function StatusBadge() {
   const [status, setStatus] = useState<string>('Connecting...');
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/ping')
+    fetch('/api/ping')
       .then((res) => res.json())
       .then((data) => setStatus(data.message))
       .catch(() => setStatus('Backend offline'));

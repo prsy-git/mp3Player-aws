@@ -81,7 +81,7 @@ export default function AudioPlayer({
 
         try {
             const res = await fetch(
-                `http://localhost:5000/api/songs/${currentSong.id}/play`,
+                `/api/songs/${currentSong.id}/play`,
                 {
                     credentials: 'include',
                 }

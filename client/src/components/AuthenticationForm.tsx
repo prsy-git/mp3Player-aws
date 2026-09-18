@@ -42,8 +42,8 @@ export default function AuthenticationForm({ onAuthSuccess }: AuthenticationForm
         setErrorMessage('');
 
         const requestEndpoint = isLogin 
-            ? 'http://localhost:5000/api/users/validate-login'
-            : 'http://localhost:5000/api/users/register-user';
+            ? '/api/users/validate-login'
+            : '/api/users/register-user';
 
         const bodyData = isLogin
             ? {username: userInfo.username, userPassword: userInfo.password}

@@ -122,7 +122,7 @@ export default function App() {
     // Backend delete for playlist items handler updated to utilize database ID
     const handleDeleteSong = async (songId: string) => {
         try {
-            const res = await fetch(`http://localhost:5000/api/songs/${songId}`, {
+            const res = await fetch(`/api/songs/${songId}`, {
                 method: 'DELETE',
                 credentials: 'include'
             });
@@ -159,7 +159,7 @@ export default function App() {
     //Sidebar handler for adding playlists
     const handleCreatePlaylist = async (name: string) => {
         try {
-            const res = await fetch(`http://localhost:5000/api/playlists`, {
+            const res = await fetch(`/api/playlists`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -196,7 +196,7 @@ export default function App() {
         if (removeId === 'library' || targetPlaylist?.name.toLocaleLowerCase() === 'favorites') return;
         
         try {
-            const res = await fetch(`http://localhost:5000/api/playlists/${removeId}`, {
+            const res = await fetch(`/api/playlists/${removeId}`, {
                 method: 'DELETE',
                 credentials: 'include'
             })

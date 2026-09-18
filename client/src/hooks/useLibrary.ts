@@ -37,7 +37,7 @@ export function useLibrary(refreshFlag: number, user: unknown) {
     
         if (!user) return;
         
-        fetch('http://localhost:5000/api/songs', {
+        fetch('/api/songs', {
             credentials: 'include',
         })
             .then((res) => {
@@ -58,7 +58,7 @@ export function useLibrary(refreshFlag: number, user: unknown) {
                 setSongs(inFormatSongs);
 
                 //Fetch custom user DB playlists from backend
-                fetch('http://localhost:5000/api/playlists', {
+                fetch('/api/playlists', {
                     credentials: 'include',
                 })
                     .then((res) => {
@@ -100,7 +100,7 @@ export function useLibrary(refreshFlag: number, user: unknown) {
         
         try {
             //Fetch from backend
-            const res = await fetch(`http://localhost:5000/api/playlists/${targetPlaylistId}/songs`, {
+            const res = await fetch(`/api/playlists/${targetPlaylistId}/songs`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ export function useLibrary(refreshFlag: number, user: unknown) {
 
         try {
         
-            const res = await fetch(`http://localhost:5000/api/playlists/${playlistId}/songs/${songId}`, {
+            const res = await fetch(`/api/playlists/${playlistId}/songs/${songId}`, {
                 method: 'DELETE',
                 credentials: 'include'
             });

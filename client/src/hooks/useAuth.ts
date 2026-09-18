@@ -11,7 +11,7 @@ export function useAuth() {
 
   // Check for an existing session
   useEffect(() => {
-    fetch('http://localhost:5000/api/users/me', {
+    fetch('/api/users/me', {
       credentials: 'include',
     })
       .then((res) => {
@@ -31,7 +31,7 @@ export function useAuth() {
   // Logout handler
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:5000/api/users/logout', {
+      await fetch('/api/users/logout', {
         method: 'POST',
         credentials: 'include',
       });
