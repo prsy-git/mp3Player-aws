@@ -119,7 +119,8 @@ router.post('/validate-login', async (req, res) => {
         req.session.userId = user.userid;
 
         return res.status(200).json({
-            message: 'Information validated; logging in.'
+            message: 'Information validated; logging in.',
+            userId: user.userid
         });
     } catch (error) {
         console.error('Specific PostgreSQL login error:', error);
@@ -137,7 +138,7 @@ router.post('/logout', (req, res) => {
                 error: 'Unable to destroy session.'
             });
         }
-
+        
         res.clearCookie('connect.sid');
 
         return res.status(200).json({
