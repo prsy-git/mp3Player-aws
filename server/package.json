@@ -7,9 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
-    "db:init": "tsx scripts/initialize-postgres.ts",
-    "check:users": "tsx scripts/check-postgres-users.ts"
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
@@ -18,7 +16,6 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1132.0",
     "@aws-sdk/credential-providers": "^3.1132.0",
-    "@aws-sdk/rds-signer": "^3.1131.0",
     "@aws-sdk/s3-request-presigner": "^3.1132.0",
     "bcrypt": "^6.0.0",
     "connect-pg-simple": "^10.0.0",
