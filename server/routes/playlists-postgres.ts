@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import pool from '../db/rds-postgres.js';
+import pool from '../db/postgres.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();

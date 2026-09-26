@@ -6,21 +6,21 @@ import pg from 'pg';
 const { Client } = pg;
 
 const client = new Client({
-    host: process.env.NEW_RDS_HOST,
-    port: Number(process.env.NEW_RDS_PORT || 5432),
-    user: process.env.NEW_RDS_USER || 'postgres',
-    password: process.env.NEW_RDS_PASSWORD,
-    database: process.env.NEW_RDS_DATABASE || 'postgres',
+    host: process.env.POSTGRES_HOST,
+    port: Number(process.env.POSTGRES_PORT || 5432),
+    user: process.env.POSTGRES_USER || 'postgres',
+    password: process.env.POSTGRES_PASSWORD,
+    database: process.env.POSTGRES_DATABASE || 'postgres',
     ssl: {
         rejectUnauthorized: false
     },
     connectionTimeoutMillis: 30000
 });
 
-async function initializeRds() {
+async function initializePostgres() {
     const schemaPath = path.resolve(
         process.cwd(),
-        'db/schema-rds.sql'
+        'db/schema.sql'
     );
 
     try {
@@ -42,14 +42,14 @@ async function initializeRds() {
             ORDER BY table_name;
         `);
 
-        console.log('RDS PostgreSQL schema initialized successfully.');
+        console.log('PostgreSQL schema initialized successfully.');
         console.log('Tables found:', result.rows);
     } catch (error) {
-        console.error('RDS schema initialization failed:', error);
+        console.error('PostgreSQL schema initialization failed:', error);
         process.exitCode = 1;
     } finally {
         await client.end().catch(() => {});
     }
 }
 
-initializeRds();
+initializePostgres();

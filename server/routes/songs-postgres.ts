@@ -10,14 +10,13 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-import pool from '../db/rds-postgres.js';
+import pool from '../db/postgres.js';
 import { requireAuth } from '../middleware/auth.js';
 import s3, { S3_BUCKET_NAME } from '../storage/s3.js';
 
 const router = Router();
 
 // Multer file upload handling.
-// Files remain local for now; S3 migration comes afterward.
 const fileStorage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads/');
@@ -225,7 +224,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
             })
         );
 
-        // Delete the record from Aurora PostgreSQL
+        // Delete the record from PostgreSQL
         const deleteResult = await pool.query(
             `
             DELETE FROM Songs
