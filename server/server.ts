@@ -8,9 +8,10 @@ import connectPgSimple from 'connect-pg-simple';
 import pool from './db/rds-postgres.js';
 
 const app = express();
+app.set('trust proxy', 1);
+
 const PORT = Number(process.env.PORT || 8080);
 
-//Aurora testing connection function
 async function testPostgresConnection() {
     try {
         const result = await pool.query(`
@@ -55,7 +56,7 @@ app.use(
             maxAge: 1000 * 60 * 60 * 24 * 7,
             httpOnly: true,
             sameSite: 'lax',
-            secure: false,
+            secure: true,
         }
     })
 );
