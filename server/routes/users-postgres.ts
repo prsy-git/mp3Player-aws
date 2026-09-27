@@ -6,6 +6,12 @@ import pool from '../db/postgres.js';
 const router = Router();
 
 router.post('/register-user', async (req, res) => {
+    if (process.env.ALLOW_REGISTRATION !== 'true') {
+        return res.status(403).json({
+            error: 'Public registration of accounts is currently disabled to save on computing costs'
+        });
+    }
+    
     const { username, userPassword, email } = req.body;
 
     if (!username || !userPassword) {

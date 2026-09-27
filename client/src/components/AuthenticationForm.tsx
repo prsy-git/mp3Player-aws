@@ -18,13 +18,9 @@ export default function AuthenticationForm({ onAuthSuccess }: AuthenticationForm
         email: ''
     });
 
-    //State to decide if logging in to existing or registering new account
     const [isLogin, setIsLogin] = useState<boolean>(true);
-
-    //Error message display from backend
     const [errorMessage, setErrorMessage] = useState<string>('');
 
-    //Functions to handle updating userInfo when input changes
     const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setUserInfo({...userInfo, username: e.target.value});
     }
@@ -108,7 +104,7 @@ export default function AuthenticationForm({ onAuthSuccess }: AuthenticationForm
                 <div>
                     <label>Password:</label>
                     <input
-                        type="text"
+                        type="password"
                         value={userInfo.password}
                         onChange={handlePasswordChange}
                         required

@@ -1,5 +1,3 @@
-import StatusBadge from './StatusCheck';
-
 interface HeaderProps {
   userId: number | null;
   onLogout?: () => void;
