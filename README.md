@@ -60,5 +60,5 @@ The production application is hosted on AWS Lightsail and uses Nginx as a revers
 
 Authentication uses server-side sessions stored in PostgreSQL. Session cookies are configured as HTTP-only and secure so they are only transmitted over HTTPS. PostgreSQL runs locally on the Lightsail instance rather than being exposed as a public database.
 
-Uploaded audio is stored in a private Amazon S3 bucket. Playback requests go through authenticated backend routes, which verify song ownership before generating a short-lived signed URL. Application
+Uploaded audio is stored in a private Amazon S3 bucket. Playback requests go through authenticated backend routes, which verify song ownership before generating a signed URL for temporary access to the bucket.
 
